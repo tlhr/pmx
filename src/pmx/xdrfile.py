@@ -33,6 +33,7 @@
 import numpy as np
 from ctypes import *
 import os.path
+from sys import getsizeof
 
 mTrr, mNumPy = 1, 2
 auto_mode = 0
@@ -42,13 +43,14 @@ out_mode = 42
 class Frame:
 
     def __init__(self, n, mode, x=None, box=None, units=None, v=None, f=None):
+        scale = 1.0
+        if units == 'A':
+            scale = 0.1
+
         # create vector for x
         self.natoms = n
         # x (coordinates)
         if mode == out_mode:
-            scale = 1.0
-            if units == 'A':
-                scale = 0.1
             self.x = ((c_float*3)*n)()
             i = 0
             for a in range(0, self.natoms):
@@ -67,8 +69,28 @@ class Frame:
             self.v=empty((n,3),dtype=float32)
             self.f=empty((n,3),dtype=float32)
         else:
-            self.v=c_size_t(0)#((c_float*3)*n)()
-            self.f=c_size_t(0)#((c_float*3)*n)()
+            #self.v=c_size_t(0)#((c_float*3)*n)()
+            #self.f=c_size_t(0)#((c_float*3)*n)()
+            if(v is not None):
+                self.v=((c_float*3)*n)()
+                if(mode==out_mode):
+                    i = 0
+                    for a in range(0, self.natoms):
+                        for dim in range(0, 3):
+                            self.v[a][dim] = scale*v[i]
+                            i += 1
+            else:
+                self.v=c_size_t(0)
+            if(f is not None):
+                self.f=((c_float*3)*n)()
+                if(mode==out_mode):
+                    i = 0
+                    for a in range(0, self.natoms):
+                        for dim in range(0, 3):
+                            self.f[a][dim] = scale*f[i]
+                            i += 1
+            else:
+                self.f=c_size_t(0)
 
         # box
         if box is not None:
@@ -86,22 +108,42 @@ class Frame:
             for k in range(3):
                 box[i][k] = self.box[i][k]
 
-    def update_atoms(self, atom_sel):
+    def update_atoms(self, atom_sel, uv=False, uf=False):
         for i, atom in enumerate(atom_sel.atoms):
             if atom_sel.unity == 'A':
                 atom.x[0] = self.x[i][0]*10
                 atom.x[1] = self.x[i][1]*10
                 atom.x[2] = self.x[i][2]*10
+                if(uv):
+                    atom.v = [v*10 for v in self.v[i]]
+                else:
+                    atom.v=[0,0,0]
+                    
+                if(uf):
+                    atom.f = [f/10. for f in self.f[i]]
+                else:
+                    atom.f=[0,0,0]
+                    
             else:
                 atom.x[0] = self.x[i][0]
                 atom.x[1] = self.x[i][1]
                 atom.x[2] = self.x[i][2]
+                if(uv):
+                    atom.v = [v for v in self.v[i]]
+                else:
+                    atom.v=[0,0,0]
+                
+                if(uf):
+                    atom.f = [f for f in self.f[i]]
+                else:
+                    atom.f=[0,0,0]
+            
 
-    def update( self, atom_sel ):
+    def update( self, atom_sel, uv=False, uf=False ):
         if(len(atom_sel.atoms)!=self.natoms):
             raise ValueError("Model and Trajectory have different numbers of atoms: %d and %d"\
                              %(len(atom_sel.atoms),self.natoms) )
-        self.update_atoms(atom_sel )
+        self.update_atoms(atom_sel, uv,uf )
         self.update_box( atom_sel.box )
 
 
@@ -182,7 +224,7 @@ class XDRFile:
         class XDRFILEstruct(Structure):
             pass;
         self.xdr.xdrfile_open.restype = POINTER(XDRFILEstruct)
-        
+
         #TODO: for safety and future ctypes compatability, declare the argument and return types for all c functions called
 
         #open file
@@ -216,8 +258,8 @@ class XDRFile:
               ndpointer(ndim=2,dtype=float32),ndpointer(ndim=2,dtype=float32),
               POINTER(c_float),POINTER(c_float)]
 
-    def write_xtc_frame( self, step=0, time=0.0, prec=1000.0, lam=0.0, box=False, x=False, units='A', bTrr=False ):
-        f = Frame(self.natoms,self.mode,box=box,x=x,units=units)
+    def write_xtc_frame( self, step=0, time=0.0, prec=1000.0, lam=0.0, box=None, x=None, v=None, f=None, units='A', bTrr=False ):
+        f = Frame(self.natoms,self.mode,box=box,x=x,v=v,f=f,units=units)
         step = c_int(step)
         time = c_float(time)
         prec = c_float(prec)
@@ -228,7 +270,10 @@ class XDRFile:
             result = self.xdr.write_xtc(self.xd,self.natoms,step,time,f.box,f.x,prec)
 
     def __iter__(self):
-        f = Frame(self.natoms,self.mode)
+        if( self.mode&mTrr):
+            f = Frame(self.natoms,self.mode, v=True, f=True)
+        else:
+            f = Frame(self.natoms,self.mode)
         #temporary c_type variables (frame variables are python type)
         step = c_int()
         time = c_float()
@@ -241,7 +286,7 @@ class XDRFile:
                     result = self.xdr.read_xtc(self.xd,self.natoms,byref(step),byref(time),f.box,f.x,byref(prec))
                     f.prec=prec.value
                 else:
-                    result = self.xdr.read_trr(self.xd,self.natoms,byref(step),byref(time),byref(lam),f.box,f.x,None,None) #TODO: make v,f possible
+                    result = self.xdr.read_trr(self.xd,self.natoms,byref(step),byref(time),byref(lam),f.box,f.x,f.v,f.f) #TODO: make v,f possible
                     f.lam=lam.value
 
                 #check return value
