@@ -16,21 +16,6 @@ def test_trajectory_xdr(gf, struct, traj):
         frame.update(m)
     assert_almost_equal(m.atoms[2].x[1], 34.70, decimal=2)
     t.close()
-
-
-@pytest.mark.parametrize("struct, traj", [
-    ('peptide_2.pdb', 'peptide_2.trr'),
-])    
-def test_trajectory_xdr_w_vel_read(gf, struct, traj):
-    m = Model(gf(struct))
-    t = Trajectory(gf(traj))
-    for frame in t:
-        frame.update(m, uv=True, uf=True)
-    #    1GLU     H2    3  10.955   8.569   4.715 -2.4632  0.5158  1.8410
-    assert_almost_equal(m.atoms[2].x[1], 85.69, decimal=2)
-    assert_almost_equal(m.atoms[2].v[1], 5.158, decimal=2)
-    t.close()
-
     
 @pytest.mark.parametrize("struct, traj", [
     ('peptide_2.pdb', 'peptide_2.trr'),

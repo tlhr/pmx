@@ -33,7 +33,6 @@
 import numpy as np
 from ctypes import *
 import os.path
-from sys import getsizeof
 
 mTrr, mNumPy = 1, 2
 auto_mode = 0
@@ -69,8 +68,6 @@ class Frame:
             self.v=empty((n,3),dtype=float32)
             self.f=empty((n,3),dtype=float32)
         else:
-            #self.v=c_size_t(0)#((c_float*3)*n)()
-            #self.f=c_size_t(0)#((c_float*3)*n)()
             if(v is not None):
                 self.v=((c_float*3)*n)()
                 if(mode==out_mode):
