@@ -549,8 +549,9 @@ class LigandAtomMapping:
 #                n1new,n2new = tripleBond(mol1,mol2,n1new,n2new)
                 n1new,n2new = self._checkTop(n1new,n2new)
                 n1new,n2new = self._disconnectedRecursive(self.mol1,self.mol2,n1new,n2new)
-                n1_foo.append(n1new)
-                n2_foo.append(n2new)
+                if len(n1new)>0 and len(n2new)>0:
+                    n1_foo.append(n1new)
+                    n2_foo.append(n2new)
         n1_list = cp.copy(n1_foo)
         n2_list = cp.copy(n2_foo)
 
@@ -571,8 +572,9 @@ class LigandAtomMapping:
                 while(self._bCheckChiralViolation(self.mol1,self.mol2,n1,n2)==True):
                     n1,n2 = self._checkChiral(self.mol1,self.mol2,n1,n2)
                     n1,n2 = self._disconnectedRecursive(self.mol1,self.mol2,n1,n2)
-                n1_foo.append(n1)
-                n2_foo.append(n2)
+                if len(n1)>0 and len(n2)>0:
+                    n1_foo.append(n1)
+                    n2_foo.append(n2)
             n1_list = cp.copy(n1_foo)
             n2_list = cp.copy(n2_foo)
 
@@ -596,8 +598,9 @@ class LigandAtomMapping:
             for n1,n2 in list(zip(n1_list,n2_list)):
                 n1,n2 = self._matchFullRings(self.mol1,self.mol2,n1,n2)
                 n1,n2 = self._disconnectedRecursive(self.mol1,self.mol2,n1,n2)
-                n1_foo.append(n1)
-                n2_foo.append(n2)
+                if len(n1)>0 and len(n2)>0:
+                    n1_foo.append(n1)
+                    n2_foo.append(n2)
             n1_list = cp.copy(n1_foo)
             n2_list = cp.copy(n2_foo)
 # test
@@ -622,8 +625,9 @@ class LigandAtomMapping:
                 for n1,n2 in list(zip(n1_list,n2_list)):
                     n1,n2 = self._matchFullRings(self.mol1,self.mol2,n1,n2)
                     n1,n2 = self._disconnectedRecursive(self.mol1,self.mol2,n1,n2)
-                    n1_foo.append(n1)
-                    n2_foo.append(n2)
+                    if len(n1)>0 and len(n2)>0:
+                        n1_foo.append(n1)
+                        n2_foo.append(n2)
                 n1_list = cp.copy(n1_foo)
                 n2_list = cp.copy(n2_foo)
 
@@ -742,9 +746,9 @@ class LigandAtomMapping:
         dict12_mol2 = self._getList12(self.mol2,n2)
         # 2a) identify problems 1-2; and 
         # 3a) fix 1-2
-        rem12_mol2_start,rem12_mol2_end = self._findProblemsExclusions(n1,n2,dict12_mol1,dict12_mol2) # output: indeces of mol2
+        rem12_mol2_start,rem12_mol2_end = self._findProblemsExclusions(n1,n2,dict12_mol1,dict12_mol2,case='1-2') # output: indeces of mol2
         n2,n1 = self._fixProblemsExclusions(self.mol2,self.mol1,n2,n1,rem12_mol2_start,rem12_mol2_end)
-        rem12_mol1_start,rem12_mol1_end = self._findProblemsExclusions(n2,n1,dict12_mol2,dict12_mol1) # output: indeces of mol1
+        rem12_mol1_start,rem12_mol1_end = self._findProblemsExclusions(n2,n1,dict12_mol2,dict12_mol1,case='1-2') # output: indeces of mol1
         n1,n2 = self._fixProblemsExclusions(self.mol1,self.mol2,n1,n2,rem12_mol1_start,rem12_mol1_end)
 
         ####### 1-3 #########    
@@ -753,9 +757,9 @@ class LigandAtomMapping:
         dict13_mol2 = self._getList13(self.mol2,n2)
         # 2b) identify problems 1-3 and
         # 3b) fix 1-3
-        rem13_mol2_start,rem13_mol2_end = self._findProblemsExclusions(n1,n2,dict13_mol1,dict13_mol2) # output: indeces of mol2
+        rem13_mol2_start,rem13_mol2_end = self._findProblemsExclusions(n1,n2,dict13_mol1,dict13_mol2,case='1-3') # output: indeces of mol2
         n2,n1 = self._fixProblemsExclusions(self.mol2,self.mol1,n2,n1,rem13_mol2_start,rem13_mol2_end)
-        rem13_mol1_start,rem13_mol1_end = self._findProblemsExclusions(n2,n1,dict13_mol2,dict13_mol1) # output: indeces of mol1
+        rem13_mol1_start,rem13_mol1_end = self._findProblemsExclusions(n2,n1,dict13_mol2,dict13_mol1,case='1-3') # output: indeces of mol1
         n1,n2 = self._fixProblemsExclusions(self.mol1,self.mol2,n1,n2,rem13_mol1_start,rem13_mol1_end)
 
         ####### 1-4 #########    
@@ -764,9 +768,9 @@ class LigandAtomMapping:
         dict14_mol2 = self._getList14(self.mol2,n2)
         # 2b) identify problems 1-4 and 
         # 3b) fix 1-4
-        rem14_mol2_start,rem14_mol2_end = self._findProblemsExclusions(n1,n2,dict14_mol1,dict14_mol2) # output: indeces of mol2
+        rem14_mol2_start,rem14_mol2_end = self._findProblemsExclusions(n1,n2,dict14_mol1,dict14_mol2,case='1-4') # output: indeces of mol2
         n2,n1 = self._fixProblemsExclusions(self.mol2,self.mol1,n2,n1,rem14_mol2_start,rem14_mol2_end)
-        rem14_mol1_start,rem14_mol1_end = self._findProblemsExclusions(n2,n1,dict14_mol2,dict14_mol1) # output: indeces of mol1
+        rem14_mol1_start,rem14_mol1_end = self._findProblemsExclusions(n2,n1,dict14_mol2,dict14_mol1,case='1-4') # output: indeces of mol1
         n1,n2 = self._fixProblemsExclusions(self.mol1,self.mol2,n1,n2,rem14_mol1_start,rem14_mol1_end)
 
         # treat disconnected
@@ -855,15 +859,19 @@ class LigandAtomMapping:
                             dict14[iStart1] = [iEnd4]
         return(dict14)
 
-    def _findProblemsExclusions(self,n1,n2,dict_mol1,dict_mol2):
+    def _findProblemsExclusions(self,n1,n2,dict_mol1,dict_mol2,case='1-2,1-3,1-4'):
         rem_start = []
         rem_end = []
+        # consider start and end atoms in mol1, e.g. 1-4 interaction
         for iStart in dict_mol1.keys():
             for iEnd in dict_mol1[iStart]:
+                # find their matchings in mol2
                 jStart,jEnd = self._getAttr(n1,n2,iStart,iEnd)
                 if( (jStart==None) or (jEnd==None) ): # mapped to a dummy, thus no worries
                     continue
+                # start atom is found in the matchings of mol2
                 if jStart in dict_mol2.keys():
+                    # if end atom in the matchings of mol2 is not present, the matching needs removing
                     if jEnd not in dict_mol2[jStart]:
                         # maybe entry already exists
                         if ((jStart in rem_start) or (jStart in rem_end)) and ((jEnd in rem_start) or (jEnd in rem_end)):
@@ -871,8 +879,8 @@ class LigandAtomMapping:
                         rem_start.append(jStart)
                         rem_end.append(jEnd)
                 elif jEnd not in dict_mol2.keys():
-                    # a weird situation that shouldn't happen
-                    doLog(self.logfile,"Warning: something wrong in the 1-2, 1-3 or 1-4 lists. Trying to proceed with the warning...",commandName=self.commandName)
+                    # an unusual situation, but can happen, it is safer to remove this mapping
+#                    doLog(self.logfile,"Warning: something wrong in the {0} lists. Trying to proceed with the warning...".format(case),commandName=self.commandName)
                     rem_start.append(jStart)
                     rem_end.append(jEnd)
         return(rem_start,rem_end)
@@ -2800,7 +2808,8 @@ class _FFfile:
         toSkip = "atomtypes"
         for line in l:
             if toSkip not in line:
-                self.atoms.append(_FFatom(line.split()))
+                if line.split():
+                    self.atoms.append(_FFatom(line.split()))
 
 def _get_FF_atoms( ffs ):
     atoms = {}
