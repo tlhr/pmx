@@ -64,6 +64,10 @@ class SGETunedArrayJobTask(SGETunedJobTask):
 
 
     def run(self):
+        #check if we want this job to fail (for debug purposes)
+        if(self.debug_exit):
+            raise(Exception("Exiting for debug reasons. We don't want this job to actually execute."))
+    
         if self.run_locally:
             self.unfinished=self._find_unfinished()
             #loop over each instance and run them separately
