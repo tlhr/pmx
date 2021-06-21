@@ -117,6 +117,17 @@ class Gather_Inputs_folder(SGETunedJobTask):
                                 "or at the end of water_apo.pdb instead.".format(water_pdb_fn)))
                                 
                     os.system("cat {} >> {}".format(water_pdb_fn, self.folder_path+"/init.pdb"))
+                    
+                #same check needs to be present for holo, as ligand resid is defined relative to final resid of protein in holo state
+                water_pdb_fn=self.study_settings['top_path']+"/proteins/"+self.p+"/water.pdb"
+                with open(water_pdb_fn, 'r') as f:
+                    firstLine = f.readline()
+                    s=firstLine.split()
+                    if(s[3]!="HOH" and s[3]!="SOL"):
+                        raise(RuntimeError("{} starts wither with a header or a molecule that is not water.\n"
+                            "Please remove the header and place any crystalographic ions into prot.pdb "
+                            "or at the end of water.pdb instead.".format(water_pdb_fn)))
+                
                 
             else:  #use holo structure/itp for apo
                 sh.copy(self.study_settings['top_path']+"/proteins/"+self.p+"/prot.pdb",
