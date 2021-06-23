@@ -36,7 +36,6 @@ import sys
 import os
 import time
 import re
-from matplotlib import pyplot as plt
 import numpy as np
 from scipy.integrate import simps
 import pickle
@@ -243,6 +242,9 @@ def _data_from_file(fn):
 # ------------------
 def plot_work_dist(wf, wr, fname='Wdist.png', nbins=20, dG=None, dGerr=None,
                    units='kJ/mol', dpi=300, statesProvided='AB'):
+
+    from matplotlib import pyplot as plt
+
     '''Plots forward and reverse work distributions. Optionally, it adds the
     estimate of the free energy change and its uncertainty on the plot.
 
