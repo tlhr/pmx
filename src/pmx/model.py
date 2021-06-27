@@ -442,6 +442,8 @@ class Model(Atomselection):
                     bNewChain = True
                 if (self.__check_if_gap( prevCatom,a )==True and bPDBGAP==True):
                     bNewChain = True
+                if a.resname=='ACE' and prevResName!='ACE':
+                    bNewChain = True
                 if (a.resnr != prevResID):
                     try:
                         if self.__compareWithoutLastChar(prevResID,a.resnr)==True: # there are some special cases where residues are named, e.g. 52, 52A, 52B, ...
