@@ -408,7 +408,14 @@ def main(argv):
         # read
         sys.stdout.write('\r Reading: %s\n' % mName)
         sys.stdout.flush()
-        m = Model(mName,bPDBTER=True)
+        try:
+            m = Model(mName,bPDBTER=True)
+        except AssertionError as e: # make sure error message ends up in log file
+            print("################################################")
+            print("File {} is corrupted!".format(mName))
+            print("Please clean it up and rerun the alignment task [Task_PL_align]")
+            print("################################################")
+            raise(e)
 #        allModels.append(m)
         #TODO: save only the protein and ligand atoms
         allModels[counter] = list(map(lambda i: m.atoms[i].x, range(0,np.shape(m.atoms)[0])))
