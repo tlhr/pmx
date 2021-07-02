@@ -162,6 +162,7 @@ def main(argv):
 
    options=[
    Option( "-seq", "string", "PVWLVVV" , "peptide sequence"),
+   Option( "-chir", "string", "LDLDLDL" , "peptide sequence"),
         ]
     
    files = [
@@ -186,7 +187,7 @@ def main(argv):
 #   ff = cmdl['-ft']
 
    # 1. construct the peptide, e.g XYZ
-   m = build_chain(cmdl['-seq'],bCyclic=True)
+   m = build_chain(cmdl['-seq'],bCyclic=True,chirality=cmdl['-chir'])
    seq = cmdl['-seq']
 #   print(seq)
 
