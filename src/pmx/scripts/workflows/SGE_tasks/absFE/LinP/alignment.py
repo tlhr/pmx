@@ -131,6 +131,58 @@ class Task_PL_align(SGETunedJobTask):
         targets.append(luigi.LocalTarget(os.path.join(self.sim_path, 'aligned.trr')) )
 
         return targets
+        
+    #check completeness of outputs.
+    #frame*.gro files can be incomplete if this task got terminated early (like due to exceeding storage quota).
+    def complete(self):
+        """
+        Check if all dHdl files exist and are of correct length.
+        """
+        reqs_complete = all(r.complete() for r in luigi.task.flatten(self.requires()))
+        if(reqs_complete):
+            outputs = luigi.task.flatten(self.output())
+            exist = list(map(lambda output: output.exists(), outputs))
+            if not all(exist):
+                return (False)
+            
+            finished_gros = []
+            for o in outputs:
+                if(o.path[-4:]==".gro"): #we only want to check gros (trrs are harder)
+                    finished_gros.append(self._check_gro_finished(o.path))
+            
+            return(all(finished_gros))
+        else:
+            return(reqs_complete)
+
+    #helper function for .gro completeness check
+    def _check_gro_finished(self, fn):
+        """Checks if a gro file is complete.
+
+        Parameters
+        ----------
+        fn: filename
+
+        Returns
+        -------
+        Boolean: True for finished.
+        """
+        ret=False
+        with open(fn, 'rb') as f:
+            #lines = f.read().splitlines()
+            #box_size_line = lines[-2] # empty line after this
+            
+            #Faster version based on https://openwritings.net/pg/python/python-read-last-line-file
+            f.seek(-2, os.SEEK_END)
+            while f.read(1) != b'\n': # find start of last line
+                f.seek(-2, os.SEEK_CUR) 
+            while f.read(1) != b'\n': # find start of second to last line
+                f.seek(-2, os.SEEK_CUR) 
+            box_size_line=f.readline().decode()
+            
+            if(len(box_size_line.split())==9): # box info line should have 9 columns; atom lines only have 8
+                ret=True
+        
+        return(ret)
 
     def gen_ndx_w_chains(self, struct_path, ndx_path, nchains):
         #create default
@@ -427,7 +479,7 @@ class Task_PL_align(SGETunedJobTask):
             m_B.al_from_resl()
 
 
-            mylog.write("\t\tInserted ligand brom C into B\n")
+            mylog.write("\t\tInserted ligand from C into B\n")
             #mylog.flush()
 
             if(self.debug):
@@ -448,9 +500,10 @@ class Task_PL_align(SGETunedJobTask):
 
 
             # output
-            if(not os.path.isfile("frame%d.gro"%fridx)):
-                m_B.write("frame%d.gro"%fridx)
-                mylog.write("\t\tWrote B as frame%d.gro\n"%fridx)
+            frame_fn="frame%d.gro"%fridx
+            if(not os.path.isfile(frame_fn) or not self._check_gro_finished(frame_fn)):
+                m_B.write(frame_fn)
+                mylog.write("\t\tWrote B as %s\n"%frame_fn)
             mylog.flush()
 
             x = np.zeros(len(m_B.atoms)*3)
@@ -473,6 +526,7 @@ class Task_PL_align(SGETunedJobTask):
             fridx+=1
 
         trj_out.close()
+        os.system("rm -f \\#*")
         mylog.close()
 
         #restore base path
