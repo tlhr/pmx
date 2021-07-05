@@ -114,4 +114,52 @@ class Task_PL_gen_morphes(SGETunedJobTask):
             targets.append(luigi.LocalTarget(
                 os.path.join(self.sim_path, 'frame%d.gro'%nf)) )
         return targets
+        
+        
+    #check completeness of outputs.
+    #frame*.gro files can be incomplete if this task got terminated early (like due to exceeding storage quota).
+    def complete(self):
+        """
+        Check if all dHdl files exist and are of correct length.
+        """
+        reqs_complete = all(r.complete() for r in luigi.task.flatten(self.requires()))
+        if(reqs_complete):
+            outputs = luigi.task.flatten(self.output())
+            exist = list(map(lambda output: output.exists(), outputs))
+            if not all(exist):
+                return (False)
+            finished_gros = list(map(lambda output: self._check_gro_finished(output.path), outputs))
+            
+            return(all(finished_gros))
+        else:
+            return(reqs_complete)
 
+    #helper function for .gro completeness check
+    def _check_gro_finished(self, fn):
+        """Checks if a gro file is complete.
+
+        Parameters
+        ----------
+        fn: filename
+
+        Returns
+        -------
+        Boolean: True for finished.
+        """
+        ret=False
+        with open(fn, 'rb') as f:
+            #lines = f.read().splitlines()
+            #box_size_line = lines[-2] # empty line after this
+            
+            #Faster version based on https://openwritings.net/pg/python/python-read-last-line-file
+            f.seek(-2, os.SEEK_END)
+            while f.read(1) != b'\n': # find start of last line
+                f.seek(-2, os.SEEK_CUR) 
+            while f.read(1) != b'\n': # find start of second to last line
+                f.seek(-2, os.SEEK_CUR) 
+            box_size_line=f.readline().decode()
+            
+            if(len(box_size_line.split())==9): # box info line should have 9 columns; atom lines only have 8
+                ret=True
+        
+        return(ret)
