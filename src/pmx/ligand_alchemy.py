@@ -399,6 +399,7 @@ class LigandAtomMapping:
         self.sigmaHoleID1 = []
         self.sigmaHoleID2 = []
         self.t = 10
+        self.bExactElementMatch = False
         self.bElements = True
         self.bCarbonize = True
         self.logfile = False
@@ -496,7 +497,11 @@ class LigandAtomMapping:
         bar = cp.deepcopy(self.molForMcs2)
         hnum1 = 52
         hnum2 = 53
-        if( self.bRingsOnly==True ):
+        if self.bExactElementMatch==True:
+            self.bElements = True
+            self._carbonizeHonly( foo, hnum1 )
+            self._carbonizeHonly( bar, hnum2 )
+        elif( self.bRingsOnly==True ):
             self.bElements = True
             self._carbonize(foo,hnum1,ringAtomMask=42)
             self._carbonize(bar,hnum2,ringAtomMask=43)
