@@ -9,6 +9,7 @@ from luigi.parameter import ParameterVisibility
 from pmx.scripts.workflows.SGE_tasks.SGETunedJobTask import SGETunedJobTask #tuned for the owl cluster
 from pmx.scripts.workflows.SGE_tasks.absFE.LinP.analysis import Task_PL_analysis_aligned,Task_PL_analysis_aligned2crystal
 from pmx.scripts.workflows.SGE_tasks.absFE.LinW.analysis import Task_WL_analysis
+from pmx.scripts.workflows.SGE_tasks.absFE.LinP.decorrelate_energetically import Task_PL_energetic_decorrelation
 
 
 # ==============================================================================
@@ -32,14 +33,14 @@ class Task_summary_aligned(SGETunedJobTask):
 
     show_incomplete = luigi.BoolParameter(default=False, significant=True,
                                visibility=ParameterVisibility.HIDDEN)
-    
+
     show_sep_repeats = luigi.BoolParameter(default=False, significant=True,
                                visibility=ParameterVisibility.HIDDEN)
 
     only_LinW = luigi.BoolParameter(default=False, significant=True,
                                visibility=ParameterVisibility.HIDDEN)
 
-    decor_decoupled = luigi.Parameter(default="False", significant=True)
+    decor_decoupled = luigi.Parameter(default="energetic", significant=True)
 
     #TODO: add default
     study_settings = luigi.DictParameter(significant=False,
@@ -81,6 +82,9 @@ class Task_summary_aligned(SGETunedJobTask):
         elif(self.decor_decoupled.casefold()=="gaussian" or self.decor_decoupled.casefold()=="sampling"):
             self.PL_settings['decor_decoupled']=True
             self.PL_settings['decor_method']="sampling"
+        elif(self.decor_decoupled.casefold()=="energetic" or self.decor_decoupled.casefold()=="MCI"):
+            self.PL_settings['decor_decoupled']=True
+            self.PL_settings['decor_method']="MCI"
         else:
             raise(Exception("Invalid value for decor_decoupled detected (%s)"%self.decor_decoupled))
 
@@ -89,9 +93,13 @@ class Task_summary_aligned(SGETunedJobTask):
         self.outname="summary_aligned.txt"
         if(self.show_incomplete):
             self.outname="summary_aligned_incomplete.txt"
+        if(self.PL_settings['decor_method']=="MCI"):
+            self.outname=self.outname[:-4]+"_energ_decor"+self.outname[-4:]
         self.restrname="out_dg_{i}.dat"
 
         self.anafolderfmt_P="/analysis/repeat{i}"
+        if(self.PL_settings['decor_method']=="MCI"):
+            self.anafolderfmt_P="/decor_analysis/repeat{i}"
         self.anafolderfmt_W="/analysis/repeat{i}"
 
     def work(self):
@@ -187,14 +195,14 @@ class Task_summary_aligned(SGETunedJobTask):
                     anacorrs.update({key:[np.mean(cors[:nfound]), np.std(cors[:nfound]), nfound]})
                 else:
                     anacorrs.update({key:[np.nan, np.nan, nfound]})
-                    
+
                 corrs_reps.update({key:cors})
 
 
         #print summary table
         if(self.show_sep_repeats):
             rep_file=open("sep_repeats_"+self.outname, 'w')
-        
+
         with open(self.outname, 'w') as sf:
 
             print("{:^20s} \t{:^20s}   {:^20s}   {:^20s}   {:^20s}".format(
@@ -208,7 +216,7 @@ class Task_summary_aligned(SGETunedJobTask):
                     key=p+' '+l
                     if(self.show_sep_repeats):
                         rep_file.write("{:<20s}:\t".format(key))
-                    
+
                     if(np.isfinite(inws[l][0]) and np.isfinite(inps[key][0]) and np.isfinite(anacorrs[key][0]) or
                        (np.isfinite(inws[l][0]) and self.only_LinW) ):
                         ddG = inws[l][0] - inps[key][0] #water - (protein + restr corr.)
@@ -223,7 +231,7 @@ class Task_summary_aligned(SGETunedJobTask):
                             inps[key][0], inps[key][1],
                             inws[l][0], inws[l][1],
                             anacorrs[key][0], anacorrs[key][1]) )
-                        
+
                         if(self.show_sep_repeats):
                             for r in range(self.n_repeats):
                                 dG = w_reps[l][r] - p_reps[key][r]
@@ -261,11 +269,18 @@ class Task_summary_aligned(SGETunedJobTask):
                         folder_path = self.base_path+'/prot_'+p+'/lig_'+l
                         for sTI in self.PL_settings['TIstates']:
                             for i in range(self.PL_settings['n_repeats']):
-                                tasks.append(Task_PL_analysis_aligned(
-                                    p = p, l = l, i = i,
-                                    study_settings = self.PL_settings,
-                                    folder_path = folder_path,
-                                    parallel_env=self.parallel_env))
+                                if(self.PL_settings['decor_method']=="MCI"):
+                                    tasks.append(Task_PL_energetic_decorrelation(
+                                        p = p, l = l, i = i,
+                                        study_settings = self.PL_settings,
+                                        folder_path = folder_path,
+                                        parallel_env=self.parallel_env))
+                                else:
+                                    tasks.append(Task_PL_analysis_aligned(
+                                        p = p, l = l, i = i,
+                                        study_settings = self.PL_settings,
+                                        folder_path = folder_path,
+                                        parallel_env=self.parallel_env))
 
         return(tasks)
 
