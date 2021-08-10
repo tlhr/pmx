@@ -65,6 +65,9 @@ class Sim_PL_EM(SGE_Sim):
             self.p, self.l, self.s, self.i, self.m)
         self.posre = self.folder_path+"/ions{3}_{4}.pdb".format(
             self.p, self.l, self.s, self.i, self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
+        
         self.mdrun = self.study_settings['mdrun']
         if(self.use_dbl_precision):
             self.mdrun = self.study_settings['mdrun_double']
@@ -94,6 +97,8 @@ class Sim_PL_NVT_posre(Sim_PL_EM):
         if(self.restr_to_EM):
             self.posre = self.folder_path+"/state{s}/repeat{i}/em{m}/confout.gro".format(
                 s=self.s, i=self.i, m=self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
         #override relevant file names
         self.mdp = self.study_settings['mdp_path'] +\
@@ -119,6 +124,8 @@ class Sim_PL_NVT_posre_soft(Sim_PL_EM):
         if(self.restr_to_EM):
             self.posre = self.folder_path+"/state{s}/repeat{i}/em{m}/confout.gro".format(
                 s=self.s, i=self.i, m=self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
         #override relevant file names
         self.mdp = self.study_settings['mdp_path'] +\
@@ -147,6 +154,8 @@ class Sim_PL_NPT(Sim_PL_EM):
         self.struct = self.folder_path+"/state{2}/repeat{3}/nvt_posre_soft{4}/confout.gro".format(
             self.p, self.l, self.s, self.i, self.m)
         self.posre = None
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
     def requires(self):
         return( Sim_PL_NVT_posre_soft(p=self.p, l=self.l, i=self.i, m=self.m, s=self.s,

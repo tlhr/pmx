@@ -44,6 +44,16 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
         significant=False,
         parsing=luigi.BoolParameter.EXPLICIT_PARSING,
         description="Copy over confout*.gro files")
+    
+    posre_ref_override_AC = luigi.Parameter(
+        visibility=ParameterVisibility.HIDDEN,
+        significant=True, default="",
+        description="Overrides which file is used as reference for position restraints of fwd TI (A->C).")
+    
+    posre_ref_override_CA = luigi.Parameter(
+        visibility=ParameterVisibility.HIDDEN,
+        significant=True, default="",
+        description="Overrides which file is used as reference for position restraints of bck TI (C->A).")
 
     stage="morphes"
     #request 1 core
@@ -239,10 +249,14 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
 
                 #if startfn wasn't already generated in a previous attempt, do so now.
                 if(not os.path.isfile(startfn)):
+                    #restraint reference coordinates override
+                    restr=""
+                    if(self.posre_ref_override_CA):
+                        restr="-r {}".format(self.posre_ref_override_CA)
+                    
                     #make tpr
-                    #ndxf = self.folder_path+"/index_prot_mol_noH_{i}.ndx".format(i=self.i)
                     ndxf = self.folder_path+"/decor_{i}.ndx".format(i=self.i)
-                    os.system("gmx grompp -p {top} -c {prevfn} "
+                    os.system("gmx grompp -p {top} -c {prevfn} " + restr +
                               "-o {D}/pre_ti.tpr -po {D}/preTI_mdout.mdp -f {mdp} "
                               "-n {ndxf} "
                               "-v -maxwarn 3 ".format(D=TMPDIR, top=self.top, ndxf=ndxf,
@@ -277,10 +291,15 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
                 raise(Exception("\nUnknown decorelation method {}.\n".format(self.study_settings['decor_method'])))
 
 
-
+        #restraint reference coordinates override
+        restr=""
+        if(self.posre_ref_override_CA and (self.sTI=='C' or self.sTI=='B')): # also supports WL this way
+            restr="-r {}".format(self.posre_ref_override_CA)
+        elif(self.posre_ref_override_AC and self.sTI=='A'):
+            restr="-r {}".format(self.posre_ref_override_AC)
 
         #make tpr
-        os.system("gmx grompp -p {top} -c {startfn} "
+        os.system("gmx grompp -p {top} -c {startfn} "+ restr +
                   "-o {D}/ti.tpr -po {D}/mdout.mdp -f {mdp} "
                   "-v -maxwarn 3 ".format(D=TMPDIR, top=self.top,
                                           mdp=self.mdp, startfn=startfn) )

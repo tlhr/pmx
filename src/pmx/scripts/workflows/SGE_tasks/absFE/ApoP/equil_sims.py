@@ -38,6 +38,8 @@ class Sim_ApoP_EM(Sim_PL_EM):
             self.p, self.l, self.s, self.i, self.m)
         self.posre = self.folder_path+"/ions{3}_{4}.pdb".format(
             self.p, self.l, self.s, self.i, self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
         self.mdrun = self.study_settings['mdrun']
         if(self.use_dbl_precision):
             self.mdrun = self.study_settings['mdrun_double']
@@ -90,6 +92,8 @@ class Sim_ApoP_NVT_posre(Sim_PL_NVT_posre):
         if(self.restr_to_EM):
             self.posre = self.folder_path+"/repeat{i}/em{m}/confout.gro".format(
                 i=self.i, m=self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
         #override relevant file names
         self.mdp = self.study_settings['mdp_path'] +\
@@ -138,6 +142,8 @@ class Sim_ApoP_NVT_posre_soft(Sim_PL_NVT_posre_soft):
         if(self.restr_to_EM):
             self.posre = self.folder_path+"/repeat{i}/em{m}/confout.gro".format(
                 i=self.i, m=self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
         #override relevant file names
         self.mdp = self.study_settings['mdp_path'] +\
@@ -179,6 +185,8 @@ class Sim_ApoP_NPT(Sim_PL_NPT):
             self.p, self.l, self.s, self.i, self.m)
         self.posre = self.folder_path+"/ions{3}_{4}.pdb".format(
             self.p, self.l, self.s, self.i, self.m)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
         self.mdrun = self.study_settings['mdrun']
         if(self.use_dbl_precision):
             self.mdrun = self.study_settings['mdrun_double']

@@ -34,6 +34,8 @@ class Sim_WL_EM(Sim_PL_EM):
         self.mdp = self.study_settings['mdp_path'] +\
             "/water/em_{0}.mdp".format(self.study_settings['states'][self.s])
         self.posre = None
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
     def requires(self):
         return( Prep_WL_folder(l=self.l,
@@ -66,6 +68,8 @@ class Sim_WL_NVT(Sim_PL_NVT_posre):
         self.mdp = self.study_settings['mdp_path'] +\
             "/water/eq_nvt_{0}.mdp".format(self.study_settings['states'][self.s])
         self.posre = None
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
     def requires(self):
         return( Sim_WL_EM(l=self.l, i=self.i, m=self.m, s=self.s,
@@ -99,6 +103,8 @@ class Sim_WL_NPT(Sim_PL_NPT):
         self.struct = self.folder_path+"/state{2}/repeat{3}/nvt{4}/confout.gro".format(
             self.p, self.l, self.s, self.i, self.m)
         self.posre = None
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
     def requires(self):
         return( Sim_WL_NVT(l=self.l, i=self.i, m=self.m, s=self.s,

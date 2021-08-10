@@ -23,6 +23,16 @@ class SGE_Sim(SGETunedJobTask):
     posre = None
     mdrun = "gmx mdrun"
     mdrun_opts = ""
+    
+    posre_ref_override = luigi.Parameter(
+        visibility=ParameterVisibility.HIDDEN,
+        significant=True, default="",
+        description="Overrides which file is used as reference for position restraints.")
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if(self.posre_ref_override):
+            self.posre = self.posre_ref_override
 
     def output(self):
         """
