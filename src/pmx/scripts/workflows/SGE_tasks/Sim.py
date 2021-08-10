@@ -24,6 +24,10 @@ class SGE_Sim(SGETunedJobTask):
     mdrun = "gmx mdrun"
     mdrun_opts = ""
     
+    folder_path = luigi.Parameter(significant=False,
+                 visibility=ParameterVisibility.HIDDEN,
+                 description='Path to the protein+ligand folder to set up')
+    
     posre_ref_override = luigi.Parameter(
         visibility=ParameterVisibility.HIDDEN,
         significant=True, default="",
@@ -33,6 +37,8 @@ class SGE_Sim(SGETunedJobTask):
         super().__init__(*args, **kwargs)
         if(self.posre_ref_override):
             self.posre = self.posre_ref_override
+            
+        self.posre_ref_override=self.posre_ref_override.format(ligfolder=self.folder_path)
 
     def output(self):
         """

@@ -94,6 +94,11 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
 
         self.mdrun = self.study_settings['mdrun']
         self.mdrun_opts = self.study_settings['mdrun_opts']
+        
+        
+        self.posre_ref_override_AC=self.posre_ref_override_AC.format(ligfolder=self.folder_path)
+        self.posre_ref_override_CA=self.posre_ref_override_CA.format(ligfolder=self.folder_path)
+        
 
     def requires(self):
         tasks=[]
