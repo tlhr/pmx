@@ -320,6 +320,12 @@ class Prep_folder(SGETunedJobTask):
         significant=False,
         parsing=luigi.BoolParameter.EXPLICIT_PARSING,
         description="run locally instead of on the cluster")
+    
+    posre_ref_override = luigi.Parameter(
+        visibility=ParameterVisibility.HIDDEN,
+        significant=True, default="",
+        description="Overrides which file is used as reference for position restraints.")
+    
 
     #Parameters:
     folder_path = luigi.Parameter(significant=False,
@@ -344,6 +350,10 @@ class Prep_folder(SGETunedJobTask):
                                visibility=ParameterVisibility.HIDDEN)
                                
     _found_xray_SOL=False;
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.posre_ref_override=self.posre_ref_override.format(ligfolder=self.folder_path)
 
     def solvate(self):
         """Solvates the system.
@@ -415,10 +425,13 @@ class Prep_folder(SGETunedJobTask):
                         xr=xray_SOL_gid, last=n_gids) +
                         "gmx make_ndx -f water.pdb -n index.ndx -o gen_ion.ndx >> prep.log 2>&1")
             check_file_ready("gen_ion.ndx")
-                        
-        os.system("gmx grompp -p topol_solvated.top -c water.pdb -o tpr.tpr "\
-                  "-f {mdp} {ndx} -v -maxwarn 3 "\
-                  ">> prep.log 2>&1".format(mdp=self.init_mdp, ndx="" if not self._found_xray_SOL else "-n gen_ion.ndx"))
+                            
+        restr=""
+        if(self.posre_ref_override):
+            restr="-r "+self.posre_ref_override
+        os.system("gmx grompp -p topol_solvated.top -c water.pdb -o tpr.tpr "
+                  "-f {mdp} {ndx} -v -maxwarn 3 {restr}"
+                  ">> prep.log 2>&1".format(mdp=self.init_mdp, ndx="" if not self._found_xray_SOL else "-n gen_ion.ndx", restr=restr))
         check_file_ready("tpr.tpr")
 
         #generate ions for each

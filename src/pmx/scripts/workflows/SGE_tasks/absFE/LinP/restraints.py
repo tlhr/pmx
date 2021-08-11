@@ -93,6 +93,11 @@ class Task_PL_gen_restraints(SGETunedJobTask):
         visibility=ParameterVisibility.HIDDEN,
         significant=False, default="aligned",
         description="Which trajectory to base restraints on. Options: aligned, coupled.")
+    
+    #verbose_completeness=luigi.BoolParameter(
+        #visibility=ParameterVisibility.HIDDEN,
+        #significant=False, default=False,
+        #description="Should we list missing outputfiles?")
 
     extra_packages=[md]
 
@@ -348,8 +353,14 @@ class Task_PL_gen_restraints(SGETunedJobTask):
                 targets.append(luigi.LocalTarget(os.path.join(self.folder_path,
                                           "topolTI_ions%s%d_%d.top"%(s,self.i,m))))
 
-        if('decor_decoupled' in self.study_settings and  self.study_settings['decor_decoupled']):
+        if('decor_decoupled' in self.study_settings and  self.study_settings['decor_decoupled'] and
+           (self.study_settings['decor_method']=="md" or self.study_settings['decor_method']=="sampling")):
             targets.append(luigi.LocalTarget(os.path.join(self.folder_path,
                                           "decor_%d.ndx"%(self.i))))
+            
+        #if(self.verbose_completeness):
+            #for t in targets:
+                #if(not os.path.isfile(t.path)):
+                    #print("Incomplete becasue missing file: ", t.path)
 
         return targets
