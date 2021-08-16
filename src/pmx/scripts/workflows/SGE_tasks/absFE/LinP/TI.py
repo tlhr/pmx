@@ -246,6 +246,9 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
 
             if(self.study_settings['decor_method']=="sampling"):
                 startfn = "start{_id}.gro".format(_id=dHdL_id)
+                
+            if(self.study_settings['decor_method']=="MCI"):
+                pass
 
             elif(self.study_settings['decor_method']=="md"):
                 prevfn = startfn
@@ -304,9 +307,9 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
             restr="-r {}".format(self.posre_ref_override_AC)
 
         #make tpr
-        os.system("gmx grompp -p {top} -c {startfn} "+ restr +
+        os.system("gmx grompp -p {top} -c {startfn} {restr}"
                   "-o {D}/ti.tpr -po {D}/mdout.mdp -f {mdp} "
-                  "-v -maxwarn 3 ".format(D=TMPDIR, top=self.top,
+                  "-v -maxwarn 3 ".format(D=TMPDIR, top=self.top, restr=restr,
                                           mdp=self.mdp, startfn=startfn) )
 
         #limit mdrun runtime
