@@ -96,8 +96,8 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
         self.mdrun_opts = self.study_settings['mdrun_opts']
         
         
-        self.posre_ref_override_AC=self.posre_ref_override_AC.format(ligfolder=self.folder_path, apofolder=self.folder_path+"../apoP/")
-        self.posre_ref_override_CA=self.posre_ref_override_CA.format(ligfolder=self.folder_path, apofolder=self.folder_path+"../apoP/")
+        self.posre_ref_override_AC=self.posre_ref_override_AC.format(ligfolder=self.folder_path, apofolder=self.folder_path+"/../apoP/")
+        self.posre_ref_override_CA=self.posre_ref_override_CA.format(ligfolder=self.folder_path, apofolder=self.folder_path+"/../apoP/")
         
 
     def requires(self):
@@ -234,11 +234,54 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
         #translate it into a non-finished frame ID
         print("unfinished:",self.unfinished)
         dHdL_id=self.unfinished[SGE_TASK_ID-1] #SGE starts counting from 1
+        
+        #if(dHdL_id!=0):
+            #raise(Exception("DEBUGING: only want TI for first frame!"))
 
         #find temp working dir for this job
         TMPDIR = os.environ['TMPDIR']
 
         startfn = "frame{_id}.gro".format(_id=dHdL_id)
+        
+        
+        
+        #restraint reference coordinates override
+        restr=""
+        if(self.posre_ref_override_AC and self.sTI=='A'):
+            restr="-r {}".format(self.posre_ref_override_AC)
+            #raise(Exception("DEBUGING: only want TI for C->A!"))
+        elif(self.posre_ref_override_CA and (self.sTI=='C' or self.sTI=='B')): # also supports WL this way
+            restr="-r {}".format(self.posre_ref_override_CA)
+            
+            #If we aligned the ligand into the apo structure, we need to move the posres reference coordinates
+            #to match the current starting position.
+            if(self.restr_scheme=="Aligned"):
+                #make an index file with all restraint atoms
+                os.system("echo -e 'q\\n' | gmx make_ndx -f {ref} -o {D}/posre_temp.ndx 2>&1".format(
+                           ref=self.posre_ref_override_CA, D=TMPDIR) )
+                #make a temporary tpr file for alignment
+                os.system("gmx grompp -p {top} -c {startfn} {restr} "
+                          "-o {D}/posre_temp.tpr -po {D}/posre_temp_mdout.mdp -f {mdp} "
+                          "-v -maxwarn 4 2>&1".format(D=TMPDIR, top=self.top, restr=restr,
+                                          mdp=self.mdp, startfn=startfn) )
+                          
+                #fit reference to frame
+                os.system("echo -e '0\\n0\\n' | gmx trjconv -s {D}/posre_temp.tpr -f {ref} -o {D}/posre_ref.pdb "
+                          "-n {D}/posre_temp.ndx -fit rot+trans 2>&1".format(
+                              ref=self.posre_ref_override_CA, D=TMPDIR) )
+                          
+                #set new reference file
+                restr="-r {D}/posre_ref.pdb".format(D=TMPDIR)
+                
+                print("\n\n\n\n\n\n\nFINISHED ALIGNING POSRES COORDS\nTMPDIR =",TMPDIR,"\n\n\n\n\n\n\n")
+        
+        #number of acceptable warnings:
+        # 1 -> md, not sd integrator used with decoupled ligand
+        # 2 -> non-matching atom names between top and frame*.gro
+        # 3 -> not needed ususally
+        nwarn=3
+        if(restr):
+            nwarn+=2 #position retsraints can raise two extra waring for insufficient atoms in the reference coordinate file
 
         #bring restraint degrees of freedom closer to equilibrium
         if(self.restr_scheme=="Aligned" and self.sTI=='C' and
@@ -256,19 +299,14 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
                 frozenfn = "{D}/pre_ti_confout.gro".format(D=TMPDIR)
 
                 #if startfn wasn't already generated in a previous attempt, do so now.
-                if(not os.path.isfile(startfn)):
-                    #restraint reference coordinates override
-                    restr=""
-                    if(self.posre_ref_override_CA):
-                        restr="-r {}".format(self.posre_ref_override_CA)
-                    
+                if(not os.path.isfile(startfn)):                    
                     #make tpr
                     ndxf = self.folder_path+"/decor_{i}.ndx".format(i=self.i)
                     os.system("gmx grompp -p {top} -c {prevfn} " + restr +
                               "-o {D}/pre_ti.tpr -po {D}/preTI_mdout.mdp -f {mdp} "
                               "-n {ndxf} "
-                              "-v -maxwarn 3 ".format(D=TMPDIR, top=self.top, ndxf=ndxf,
-                                                      mdp=self.preTI_mdp, prevfn=prevfn) )
+                              "-v -maxwarn {nwarn} ".format(D=TMPDIR, top=self.top, ndxf=ndxf,
+                                                      mdp=self.preTI_mdp, prevfn=prevfn, nwarn=nwarn) )
 
                     #run sim
                     os.system(self.mdrun+" -s {D}/pre_ti.tpr -dhdl {D}/pre_ti_dgdl.xvg -cpo "
@@ -298,19 +336,11 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
             else:
                 raise(Exception("\nUnknown decorelation method {}.\n".format(self.study_settings['decor_method'])))
 
-
-        #restraint reference coordinates override
-        restr=""
-        if(self.posre_ref_override_CA and (self.sTI=='C' or self.sTI=='B')): # also supports WL this way
-            restr="-r {}".format(self.posre_ref_override_CA)
-        elif(self.posre_ref_override_AC and self.sTI=='A'):
-            restr="-r {}".format(self.posre_ref_override_AC)
-
         #make tpr
-        os.system("gmx grompp -p {top} -c {startfn} {restr}"
+        os.system("gmx grompp -p {top} -c {startfn} {restr} "
                   "-o {D}/ti.tpr -po {D}/mdout.mdp -f {mdp} "
-                  "-v -maxwarn 3 ".format(D=TMPDIR, top=self.top, restr=restr,
-                                          mdp=self.mdp, startfn=startfn) )
+                  "-v -maxwarn {nwarn} ".format(D=TMPDIR, top=self.top, restr=restr,
+                                          mdp=self.mdp, startfn=startfn, nwarn=nwarn) )
 
         #limit mdrun runtime
         s = self.runtime.split(':')
@@ -328,6 +358,11 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
         #copy dHdl file back
         os.system("rsync {}/dgdl.xvg {}/dHdl{}.xvg".format(
                       TMPDIR, self.sim_path, dHdL_id) )
+        
+        #os.system("rsync {D}/posre_ref.pdb {f}/posre_ref{id}.pdb".format(
+                      #D=TMPDIR, f=self.sim_path, id=dHdL_id) )
+        #os.system("rsync {D}/traj.trr {f}/morphing_traj{id}.trr".format(
+                      #D=TMPDIR, f=self.sim_path, id=dHdL_id) )
       
         if(self.save_final):
             #copy the final gro file back
