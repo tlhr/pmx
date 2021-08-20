@@ -21,12 +21,21 @@ def _parse_qsub_job_array_id(qsub_out):
     """
     return int(qsub_out.split()[2].split('.')[0])
 
-def _build_qsub_array_command(cmd, job_name, pe, n_cpu, work_dir, nsubtasks, runtime=None, extra_options=""):
+def _build_qsub_array_command(cmd, job_name, pe, n_cpu, work_dir, nsubtasks, runtime=None, extra_options="", priority=0):
     """Submit array job shell command to SGE queue via `qsub`"""
     h_rt=""
     if(runtime):
         h_rt="-l h_rt="+runtime
-    qsub_template = """echo {cmd} | qsub -t 1:{nsubtasks} -V -r y {h_rt} -pe {pe} {n_cpu} -N {job_name} -wd {work_dir} {extra_options}"""
+    qsub_template = """echo {cmd} | qsub -t 1:{nsubtasks} -V -r y {h_rt} -pe {pe} {n_cpu} -N {job_name} -wd {work_dir}"""
+    #handle priority
+    priority=int(priority)
+    if(priority>0):
+        print("WARNING: qsub will not allow a positive priority from a non-admin account. Setting priority to 0.")
+        priority=0
+    if(priority<0):
+        qsub_template += f" -p {priority}"
+    #handle extra options
+    qsub_template += f" {extra_options}"
     return qsub_template.format(
         cmd=cmd, job_name=job_name, work_dir=work_dir,
         pe=pe, n_cpu=n_cpu, h_rt=h_rt, nsubtasks=nsubtasks, extra_options=extra_options)
@@ -119,7 +128,7 @@ class SGETunedArrayJobTask(SGETunedJobTask):
                                                self.parallel_env, self.n_cpu,
                                                self.sim_path,
                                                len(self.unfinished), self.runtime,
-                                               self.qsub_extra_options)
+                                               self.qsub_extra_options, self.priority)
         logger.debug('qsub command: \n' + submit_cmd)
 
         # Submit the job and grab job ID

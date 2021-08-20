@@ -38,12 +38,22 @@ def _parse_qstat_state_opt_header(qstat_out, job_id, header=True):
                 return state
     return 'u'
 
-def extended_build_qsub_command(cmd, job_name, outfile, errfile, pe, n_cpu, runtime=None, extra_options=""):
+def extended_build_qsub_command(cmd, job_name, outfile, errfile, pe, n_cpu, runtime=None, extra_options="", priority=0):
     """Submit shell command to SGE queue via `qsub`"""
     h_rt=""
     if(runtime):
         h_rt="-l h_rt="+runtime
     qsub_template = """echo {cmd} | qsub -o ":{outfile}" -e ":{errfile}" -V -r y {h_rt} -pe {pe} {n_cpu} -N {job_name} {extra_options}"""
+    #handle priority
+    priority=int(priority)
+    if(priority>0):
+        print("WARNING: qsub will not allow a positive priority from a non-admin account. Setting priority to 0.")
+        priority=0
+    if(priority<0):
+        qsub_template += f" -p {priority}"
+    #handle extra options
+    qsub_template += f" {extra_options}"
+    
     return qsub_template.format(
         cmd=cmd, job_name=job_name, outfile=outfile, errfile=errfile,
         pe=pe, n_cpu=n_cpu, h_rt=h_rt, extra_options=extra_options)
@@ -128,6 +138,11 @@ class SGETunedJobTask(SGEJobTask):
         significant=False,
         default=False,
         description="Don't execute. Just raise an exception before submitting to queue.")
+    
+    priority = luigi.IntParameter(
+        significant=False, default=0,
+        visibility=ParameterVisibility.HIDDEN,
+        description="Job priority to pass to qsub. Can be 0 or negative. Used to lower priority of certain tasks in the SGE queue.")
 
     extra_packages=[] #extra packages to be tarballed. Overloaded by subclasses.
 
@@ -240,7 +255,7 @@ class SGETunedJobTask(SGEJobTask):
         self.errfile = os.path.join(self.tmp_dir, 'job.err')
         submit_cmd = extended_build_qsub_command(job_str, self.job_name,
                              self.outfile, self.errfile, self.parallel_env,
-                             self.n_cpu, self.runtime, self.qsub_extra_options)
+                             self.n_cpu, self.runtime, self.qsub_extra_options, self.priority)
         logger.debug('qsub command: \n' + submit_cmd)
 
         # Submit the job and grab job ID
