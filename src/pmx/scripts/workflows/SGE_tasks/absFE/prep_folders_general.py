@@ -389,16 +389,17 @@ class Prep_folder(SGETunedJobTask):
         
         
         #Check input for sanity:
+        if(self.p):
             #number of protein chains
-        m_box = Model("box.pdb", bPDBTER=True)
-        n_prot_chains=0 #count number of protein chains. Assume that they are all the ones before the ligand.
-        for c in m_box.chains:
-            if("-MOL-" in c.get_sequence()):
-                break;
-            else:
-                n_prot_chains+=1
-        if(n_prot_chains<1):
-            raise(RuntimeError("There should be at least one protein chain before the ligand! Check if the ligand has the same chain id as the protein!"))
+            m_box = Model("box.pdb", bPDBTER=True)
+            n_prot_chains=0 #count number of protein chains. Assume that they are all the ones before the ligand.
+            for c in m_box.chains:
+                if("-MOL-" in c.get_sequence()):
+                    break;
+                else:
+                    n_prot_chains+=1
+            if(n_prot_chains<1):
+                raise(RuntimeError("There should be at least one protein chain before the ligand! Check if the ligand has the same chain id as the protein!"))
         
 
         #solvate using old VdW radii (found in mutff). This needs pmx's mutff
