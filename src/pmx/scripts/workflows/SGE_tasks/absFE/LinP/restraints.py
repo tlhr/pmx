@@ -88,6 +88,9 @@ class Task_PL_gen_restraints(SGETunedJobTask):
     min_ang_K = luigi.FloatParameter(visibility=ParameterVisibility.HIDDEN,
                                default=0.0, significant=True,
                                description="Minimal value for an angular force constant (kJ/(mol*rad^2)).")
+                               
+    T = luigi.FloatParameter(default=298.0, significant=True,
+        description="Simulation temperature.")
 
     restr_source = luigi.Parameter(
         visibility=ParameterVisibility.HIDDEN,
@@ -223,6 +226,7 @@ class Task_PL_gen_restraints(SGETunedJobTask):
 
                     g=glob.glob(frame_trjs)
                     argv = ["postHoc_restraining_python3.py", "-f", *g, "-n", fn_ref_ndx,
+                                "-T", str(float(self.T)),
                                 "-oii", "ii_C_{i}.itp".format(i=self.i),
                                 "-odg", "out_dg_{i}.dat".format(i=self.i),
                                 "-min_K", "%f"%self.min_ang_K]

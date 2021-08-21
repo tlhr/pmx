@@ -45,6 +45,9 @@ class Task_PL_analysis_aligned(SGETunedJobTask):
                                
     n_bootstrap = luigi.IntParameter(default=0, significant=True,
                                description="Number of times estimators are bootstrapped.")
+                               
+    T = luigi.FloatParameter(default=298.0, significant=True,
+        description="Simulation temperature.")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,7 +80,8 @@ class Task_PL_analysis_aligned(SGETunedJobTask):
                     ['-fA'], dHdlA,
                     ['-fB'], dHdlB,
                     ['--nbins', str(int(self.n_bins))],
-                    ['-b', str(int(self.n_bootstrap))]]
+                    ['-b', str(int(self.n_bootstrap))],
+                    ['-t', str(float(self.T))]]
         sys.argv = [item for sublist in sys.argv for item in sublist] #flatten argv
 
         with open("analysis.log", "w") as f:
