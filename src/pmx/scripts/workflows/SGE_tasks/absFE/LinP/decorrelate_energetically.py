@@ -11,6 +11,7 @@ from pmx.xtc import Trajectory
 #import pmx.scripts.workflows.SGE_tasks.SGETunedRunner as sge_runner
 #from pmx.scripts.workflows.SGE_tasks.SGETunedJobTask import SGETunedJobTask, extended_build_qsub_command, _parse_qsub_job_id #tuned for the owl cluster
 from pmx.scripts.workflows.SGE_tasks.SGETunedJobTask import SGETunedJobTask
+from pmx.scripts.workflows.SGE_tasks.absFE.LinP.morphes import Task_PL_gen_morphes
 from pmx.scripts.workflows.SGE_tasks.absFE.LinP.analysis import Task_PL_analysis_aligned
 from pmx.scripts.workflows.SGE_tasks.absFE.LinP.decorrelate_algortimically import readii, update_anchors
 from pmx.scripts.workflows.postHoc_restraining_python3 import calc_dist, calc_angle, calc_dih
@@ -442,6 +443,13 @@ class Task_PL_energetic_decorrelation(SGETunedJobTask):
               study_settings=self.study_settings,
               folder_path=self.folder_path,
               parallel_env=self.parallel_env) )
+        
+        tasks.append( Task_PL_gen_morphes(p=self.p, l=self.l,
+                        i=self.i, m=0, sTI="C",
+                        study_settings=self.study_settings,
+                        folder_path=self.folder_path,
+                        parallel_env=self.parallel_env,
+                        restr_scheme="Aligned") )
 
         return(tasks)
 
