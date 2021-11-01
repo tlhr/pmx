@@ -444,12 +444,12 @@ class Task_PL_energetic_decorrelation(SGETunedJobTask):
               folder_path=self.folder_path,
               parallel_env=self.parallel_env) )
         
-        tasks.append( Task_PL_gen_morphes(p=self.p, l=self.l,
-                        i=self.i, m=0, sTI="C",
-                        study_settings=self.study_settings,
-                        folder_path=self.folder_path,
-                        parallel_env=self.parallel_env,
-                        restr_scheme="Aligned") )
+        #tasks.append( Task_PL_gen_morphes(p=self.p, l=self.l,
+                        #i=self.i, m=0, sTI="C",
+                        #study_settings=self.study_settings,
+                        #folder_path=self.folder_path,
+                        #parallel_env=self.parallel_env,
+                        #restr_scheme="Aligned") )
 
         return(tasks)
 
