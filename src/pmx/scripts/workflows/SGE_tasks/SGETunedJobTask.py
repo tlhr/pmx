@@ -288,9 +288,9 @@ class SGETunedJobTask(SGEJobTask):
                 logger.info('Job is pending...')
             elif sge_status == 't' or sge_status == 'Rt':
                 logger.info('Job is transferring...')
-            elif 'E' in sge_status:
-                logger.error('Job has FAILED:\n' + '\n'.join(self._fetch_task_failures()))
-                break
+            #elif 'E' in sge_status:
+                #logger.error('Job has FAILED:\n' + '\n'.join(self._fetch_task_failures()))
+                #break
             elif 'd' in sge_status:
                 logger.error('Job has been scheduled for deletion...')
             elif sge_status == 'u':
@@ -304,7 +304,8 @@ class SGETunedJobTask(SGEJobTask):
             else:
                 logger.info('Job status is UNKNOWN!')
                 logger.info('Status is : %s' % sge_status)
-                raise Exception("job status isn't one of ['r', 'qw', 'E*', 't', 'u', 'Rr', 'Rt', 'd*']: %s" % sge_status)
+                #raise Exception("job status isn't one of ['r', 'qw', 'E*', 't', 'u', 'Rr', 'Rt', 'd*']: %s" % sge_status)
+                raise Exception("job status isn't one of ['r', 'qw', 't', 'u', 'Rr', 'Rt', 'd*']: %s" % sge_status)
 
     def _dump(self, out_dir=''):
         """Dump instance to file."""
