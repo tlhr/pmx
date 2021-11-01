@@ -419,7 +419,8 @@ class Model(Atomselection):
         else:
             lines = open(fname, 'r').readlines()
 
-        chainIDstring = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnoprstuvwxyz123456789'
+        chainIDstringInit = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnoprstuvwxyz123456789'
+        chainIDstring = copy.deepcopy(chainIDstringInit)
         bNewChain = True
         chainID = ' '
         prevID = ' '
@@ -441,6 +442,8 @@ class Model(Atomselection):
                     bNewChain = True
                 if (self.__check_if_gap( prevCatom,a )==True and bPDBGAP==True):
                     bNewChain = True
+                if a.resname=='ACE' and prevResName!='ACE':
+                    bNewChain = True
                 if (a.resnr != prevResID):
                     try:
                         if self.__compareWithoutLastChar(prevResID,a.resnr)==True: # there are some special cases where residues are named, e.g. 52, 52A, 52B, ...
@@ -458,8 +461,10 @@ class Model(Atomselection):
                            or (a.resname=='MG') or (a.resname=='Mg') or (a.resname=='CA') or (a.resname=='Ca') or (a.resname=='CaJ') \
                            or (a.resname=='ZN') or (a.resname=='Zn'): # add other ions when needed
                             bNewChain = False
+                            chainID = ''
                     except TypeError:
                         bNewChain = False
+                        chainID = ''
                 prevID = a.chain_id
                 prevResID = a.resnr
                 prevAtomName = a.name
@@ -471,6 +476,10 @@ class Model(Atomselection):
                         # find a new chain id
                         bFound = False
                         while bFound==False:
+                            if len(chainIDstring)==0: # used up all the IDs
+                                chainIDstring = copy.deepcopy(chainIDstringInit)
+                                chainID = "pmxX"
+                                break
                             foo = chainIDstring[0]
                             chainIDstring = chainIDstring.lstrip(chainIDstring[0])
                             if foo not in usedChainIDs:
@@ -502,6 +511,11 @@ class Model(Atomselection):
                     # find a suitable ID
                     bFound = False
                     while bFound==False:
+                        if len(chainIDstring)==0: # used up all the IDs
+                            chainIDstring = copy.deepcopy(chainIDstringInit)
+                            newChainDict[a.chain_id] = "X"
+                            a.chain_id = "X"
+                            break
                         foo = chainIDstring[0]
                         chainIDstring = chainIDstring.lstrip(chainIDstring[0])
                         # found

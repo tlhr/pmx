@@ -169,7 +169,7 @@ Provided two structures find atoms to be morphed.
     parser.add_argument('--no-chirality',
                         dest='chirality',
                         help='Perform chirality check for MCS mapping (default True)',
-                        action='store_true')
+                        action='store_false')
     parser.add_argument('--d',
                         metavar='0.05',
                         dest='d',
