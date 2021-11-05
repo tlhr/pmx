@@ -107,7 +107,7 @@ def parse_options():
                         help='Number of bootstrap samples to use for the '
                         'bootstrap estimate of the standard errors. Default '
                         'is 0 (no bootstrap).',
-                        default=0)
+                        default=100)
     parser.add_argument('-n',
                         metavar='nblocks',
                         dest='nblocks',
