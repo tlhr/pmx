@@ -78,11 +78,14 @@ def _longest_dgdl_file( lst ):
     ind = 0
     maxlen = -9999
     for idx, f in enumerate(lst[0:]):
-        fp = open(f)
-        lines = fp.readlines()
-        if len(lines)>maxlen:
-            maxlen = len(lines)
-            ind = idx 
+        try:
+            fp = open(f)
+            lines = fp.readlines()
+            if len(lines)>maxlen:
+                maxlen = len(lines)
+                ind = idx
+        except:
+            pass
     return(ind)
 
 
@@ -158,7 +161,10 @@ def integrate_dgdl(fn, ndata=-1, lambda0=0, invert_values=False):
     # check lambda0 is either 0 or 1
     assert lambda0 in [0, 1]
 
-    lines = open(fn).readlines()
+    try:
+        lines = open(fn).readlines()
+    except:
+        return None, None
     if not lines:
         return None, None
 
