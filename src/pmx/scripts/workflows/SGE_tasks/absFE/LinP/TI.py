@@ -11,6 +11,8 @@ from pmx.scripts.workflows.SGE_tasks.absFE.LinP.restraints_align2crystal import 
 from pmx.scripts.workflows.SGE_tasks.absFE.LinP.morphes_align2crystal import Task_PL_gen_morphes_align2crystal
 from pmx.scripts.workflows.utils import read_from_mdp
 
+import time
+
 
 class Task_PL_TI_simArray(SGETunedArrayJobTask):
 
@@ -54,6 +56,11 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
         visibility=ParameterVisibility.HIDDEN,
         significant=True, default="",
         description="Overrides which file is used as reference for position restraints of bck TI (C->A).")
+    
+    FF_abs_path = luigi.Parameter(
+        visibility=ParameterVisibility.HIDDEN,
+        significant=True, default=f"{os.environ['GMXLIB']}/amber99sb-ildn.ff",
+        description="path to the forsefield folder to copy to $TMPDIR")
 
     stage="morphes"
     #request 1 core
@@ -336,16 +343,39 @@ class Task_PL_TI_simArray(SGETunedArrayJobTask):
             else:
                 raise(Exception("\nUnknown decorelation method {}.\n".format(self.study_settings['decor_method'])))
 
+        #copy topology and all relevant itps to $TMPDIR
+        os.system(f"rsync -az {self.FF_abs_path.rstrip('/')} {TMPDIR}") # copy the forcefield to TMPDIR
+        FF_name = os.path.basename(self.FF_abs_path.rstrip("/"))
+        tmp_top = TMPDIR+"/"+os.path.basename(self.top)
+        
+        #print(f"self.FF_abs_path = {self.FF_abs_path}")
+        #print(f"FF_name = {FF_name}")
+        #print(f"tmp_top = {tmp_top}")
+        
+        os.system(
+            f"""for f in $(sed -E -n '/{FF_name}/! s/^#include \\"(.*)\\"/\\1/p' {self.top})
+                    do
+                    cp {self.folder_path}/$f {TMPDIR}/.
+                    done
+                sed -E '/{FF_name}/! s/^#include \\".*\/(.*\.itp)\\"/#include \\"\\1\\"/g' {self.top} > {tmp_top}
+            """)
+
         #make tpr
-        os.system("gmx grompp -p {top} -c {startfn} {restr} "
+        os.system("gmx grompp -p {tmp_top} -c {startfn} {restr} "
                   "-o {D}/ti.tpr -po {D}/mdout.mdp -f {mdp} "
-                  "-v -maxwarn {nwarn} ".format(D=TMPDIR, top=self.top, restr=restr,
+                  "-v -maxwarn {nwarn} ".format(D=TMPDIR, tmp_top=tmp_top, restr=restr,
                                           mdp=self.mdp, startfn=startfn, nwarn=nwarn) )
+        #os.system("gmx grompp -p {top} -c {startfn} {restr} "
+                  #"-o {D}/ti.tpr -po {D}/mdout.mdp -f {mdp} "
+                  #"-v -maxwarn {nwarn} ".format(D=TMPDIR, top=self.top, restr=restr,
+                                          #mdp=self.mdp, startfn=startfn, nwarn=nwarn) )
+
 
         #limit mdrun runtime
         s = self.runtime.split(':')
         maxh = (int(s[0])+float(s[1])/60+float(s[2])/3600)
         maxh = max(maxh*0.95, maxh-0.05) #grace period of 3 min so that SGE doesn't kill it too fast
+        
 
         #run sim
         os.system(self.mdrun+" -s {D}/ti.tpr -dhdl {D}/dgdl.xvg -cpo "
