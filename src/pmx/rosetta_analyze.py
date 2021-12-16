@@ -13,12 +13,13 @@ from .atom import Atom
 from .model import Model
 from .resselection import InteractiveSelection
 from pmx import resselection
-from pmx.parser import read_and_format
+from pmx.parser import parseList, kickOutComments
 from .utils import create_folder,remove_netmount,importError
 from pmx import jobscripts
 import sqlite3, shutil,tempfile,re,datetime,collections
 from pprint import pprint
 import pandas as pd
+from pmx.rosetta import muts_read_and_format
 
 try:
     import sqlite3
@@ -89,9 +90,13 @@ class FlexDDG_analyze:
         if (mutFile is None) and len(mutList)==0:
             self._mutations_from_folders( )
         elif mutFile is not None:
-            self.sele = read_and_format( mutFile, 'sss' )
+            self.sele = muts_read_and_format( mutFile, 'sss' )
             for sel in self.sele:
-                self.folders.append('mut_ch{0}_{1}{2}'.format(sel[0],sel[1],sel[2]))
+                folder = 'mut_ch{0}_{1}{2}'.format(sel[0][0],sel[0][1],sel[0][2])
+                for i in range(1,len(sel)): # several mutations simultaneously
+                    s = sel[i]
+                    folder = folder+'_ch{0}_{1}{2}'.format(s[0],s[1],s[2])
+                self.folders.append( folder )
         self.folderNum = len(self.folders)
 
         # output file

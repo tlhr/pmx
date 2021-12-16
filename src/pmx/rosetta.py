@@ -13,7 +13,7 @@ from .atom import Atom
 from .model import Model
 from .resselection import InteractiveSelection
 from pmx import resselection
-from pmx.parser import read_and_format
+from pmx.parser import parseList, kickOutComments
 from .utils import create_folder,remove_netmount
 from pmx import jobscripts
 
@@ -41,6 +41,25 @@ def get_rosetta_path():
     print('Please, set one of the variables to rosetta/bin:')
     print('ROSETTAPATH, ROSETTA or PMXROSETTA')
     sys.exit(0) 
+
+def muts_read_and_format(filename, format_string, comment='#',
+                    ignore_missing=False):
+    """
+    formats the mutations
+    entries can be separated by a comma, e.g. X 17 A, X 18 A
+    format_string : str
+        e.g. 'is' = [int, str]; 'iis' = [int, int, str] etc.
+    """
+    l = open(filename).readlines()
+    if comment is not None:
+        l = kickOutComments(l, comment)
+    output = []
+    for ll in l:
+        foo = ll.split(',')
+        n = parseList(format_string, foo, ignore_missing)
+        output.append(n)
+    return output
+
 
 class Rosetta:
     '''Parent class for the other rosetta classes.
@@ -148,7 +167,7 @@ class FlexDDG(Rosetta):
         if (mutFile is None) and len(mutList)==0:
             self.sele = mutate.InteractiveSelection(m=self.m, ff='', renumbered=False)
         elif mutFile is not None:
-            self.sele = read_and_format( mutFile, 'sss' )
+            self.sele = muts_read_and_format( mutFile, 'sss' )
         else:
             raise ValueError('mutation file or mutation list is needed')  
 
@@ -194,7 +213,10 @@ class FlexDDG(Rosetta):
 
         for sel,folder in zip(self.sele,self.folders):
             simcpu = self.max_cpus
-            jobname = 'mut_ch{0}_{1}{2}'.format(sel[0],sel[1],sel[2])
+            jobname = 'mut_ch{0}_{1}{2}'.format(sel[0][0],sel[0][1],sel[0][2])
+            for i in range(1,len(sel)): # several mutations simultaneously
+                s = sel[i]
+                jobname = jobname+'_ch{0}_{1}{2}'.format(s[0],s[1],s[2])
             jobscriptFile = folder+'/jobscript'
             jobscriptFiles.append(jobscriptFile)
             cmdline = 'python run.py'
@@ -213,12 +235,19 @@ class FlexDDG(Rosetta):
             fname = folder+'/nataa_mutations.resfile'
             fp = open(fname,'w')
             fp.write('NATAA\nstart\n')
-            fp.write('{0} {1} PIKAA {2}\n'.format(sel[1],sel[0],sel[2]))
+            fp.write('{0} {1} PIKAA {2}\n'.format(sel[0][1],sel[0][0],sel[0][2]))
+            for i in range(1,len(sel)): # several mutations simultaneously
+                s = sel[i]
+                fp.write('{0} {1} PIKAA {2}\n'.format(s[1],s[0],s[2]))
             fp.close()
 
             ### chains-to-move file
             fname = folder+'/chains_to_move.txt'
-            chToMove = sel[0]
+            chToMove = sel[0][0]
+            chainsAlreadyFound = [chToMove]
+            for i in range(1,len(sel)): # several mutations simultaneously
+                if sel[i][0] not in chainsAlreadyFound:
+                    chToMove = chToMove + ','+sel[i][0]
             if self.chainsToMove!=None:
                 chToMove = self.chainsToMove
             fp = open(fname,'w')
@@ -227,7 +256,11 @@ class FlexDDG(Rosetta):
 
     def __gen_folder_structure(self):
         for sel in self.sele:
-            dirname = os.path.abspath( self.basepath+'/mut_ch{0}_{1}{2}'.format(sel[0],sel[1],sel[2]) )
+            folder = '/mut_ch{0}_{1}{2}'.format(sel[0][0],sel[0][1],sel[0][2])
+            for i in range(1,len(sel)): # several mutations simultaneously
+                s = sel[i]
+                folder = folder+'_ch{0}_{1}{2}'.format(s[0],s[1],s[2])
+            dirname = os.path.abspath( self.basepath+folder )
             self.folders.append( dirname )
             create_folder(dirname)
 
@@ -493,7 +526,7 @@ class DDGmonomer:
         if (mutFile is None) and len(mutList)==0:
             self.sele = mutate.InteractiveSelection(m=self.m, ff='', renumbered=False)
         elif mutFile is not None:
-            self.sele = read_and_format( mutFile, 'sss' )
+            self.sele = muts_read_and_format( mutFile, 'sss' )
         else:
             raise ValueError('mutation file or mutation list is needed')  
 
@@ -511,4 +544,7 @@ class DDGmonomer:
         self.clusterSimTime = clusterSimTime
         self.clusterModulesToLoad = clusterModulesToLoad
         self.clusterFilesToSource = clusterFilesToSource
+ 
+        # ... Unfinished ...
+
 
