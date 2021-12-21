@@ -551,7 +551,7 @@ class LigandAtomMapping:
             n1new = cp.deepcopy(n1)
             for n2 in n2_list:
                 n2new = cp.deepcopy(n2)
-#                n1new,n2new = tripleBond(mol1,mol2,n1new,n2new)
+                n1new,n2new = self._tripleBond(self.mol1,self.mol2,n1new,n2new)
                 n1new,n2new = self._checkTop(n1new,n2new)
                 n1new,n2new = self._disconnectedRecursive(self.mol1,self.mol2,n1new,n2new)
                 if len(n1new)>0 and len(n2new)>0:
@@ -684,6 +684,13 @@ class LigandAtomMapping:
                 n2.append(bar)
         return(n1,n2)
 
+    def _countHydrogens( self, nb ):
+        counter = 0
+        for n in nb:
+            if n.GetAtomicNum()==1:
+                counter+=1
+        return(counter)
+
     def _mapH( self, nfoo, nbar ):
         newn1 = []
         newn2 = []
@@ -700,6 +707,16 @@ class LigandAtomMapping:
             id2 = a2.GetAtomicNum()
             nb1 = a1.GetNeighbors()
             nb2 = a2.GetNeighbors()
+
+            # only allow mapping hydrogens in those cases, 
+            # when n1 and n2 have an equal number of them bound
+            nH1 = self._countHydrogens(nb1)
+            nH2 = self._countHydrogens(nb2)
+            if nH1!=nH2:
+                continue
+            # also skip the rest of the loop if there are no neighbour hydrogens
+            if nH1==0 or nH2==0:
+                continue
 
             # TODO: add a distance criterium for the optimal hydrogen mapping
             # DONE: needs some more testing
@@ -738,6 +755,55 @@ class LigandAtomMapping:
             if anum2!=6:
                 return(True)
         return(False)
+
+    def _isTriple(self,mol,a):
+        bTriple = False
+        neighb = a.GetNeighbors()
+        # analyze C,N (S not considered, because somewhat exotic) atoms for triple bonds
+        # C
+        if( a.GetAtomicNum()==6 ):
+            if( len(a.GetNeighbors())==2 ):
+                for neighb in a.GetNeighbors():
+                    if( neighb.GetAtomicNum()==7 ):
+                        if( len(neighb.GetNeighbors())==1 ):
+                            bTriple=True
+                    if( neighb.GetAtomicNum()==6 ):
+                        if( len(neighb.GetNeighbors())==2 ):
+                            if( getBondLength(mol,a.GetIdx(),neighb.GetIdx())<1.25 ): # need to check bond length (in Angstroms)
+                                bTriple=True
+        # N
+        elif( a.GetAtomicNum()==7 ):
+            if( len(a.GetNeighbors())==1 ):
+                bTriple=True
+
+   #    Chem.MolToMolFile(mol1,"foomol.mol")
+#    foo = Chem.MolFromMolFile("foomol.mol")
+#    Chem.MolToMolFile(mol2,"barmol.mol")
+#    bar = Chem.MolFromMolFile("barmol.mol")
+#    os.remove("foomol.mol")
+#    os.remove("barmol.mol")
+
+        return(bTriple)
+
+
+    def _tripleBond(self,mol1,mol2,nfoo,nbar):
+        newn1 = []
+        newn2 = []
+        for n1,n2 in zip(nfoo,nbar):
+            a1 = mol1.GetAtomWithIdx(n1)
+            a2 = mol2.GetAtomWithIdx(n2)
+            bTriple1 = False
+            bTriple2 = False
+            # identify if bTriple is True/False
+            bTriple1 = self._isTriple(mol1,a1)
+            bTriple2 = self._isTriple(mol2,a2)
+            if(bTriple1==True and bTriple2==False):
+                continue
+            elif(bTriple2==True and bTriple1==False):
+                continue
+            newn1.append(n1)
+            newn2.append(n2)
+        return(newn1,newn2)
 
     def _checkTop(self, n1, n2 ):
     #    return(n1,n2)
@@ -1843,7 +1909,7 @@ class LigandAtomMapping:
         # n1,n2 = removePolarHmappings(mol1,mol2,n1,n2,bH2Hpolar)
         # triple bond rule: for simulation stability do not allow morphing an atom that is involved in a triple bond
         # into an atom that is involved in a non-triple bond (and vice versa)
-        # n1,n2 = tripleBond(mol1,mol2,n1,n2)
+        n1,n2 = self._tripleBond(self.mol1,self.mol2,n1,n2)
         # rings
         n1,n2 = self._matchRings(self.mol1,self.mol2,n1,n2)
         # checking possible issues with the 1-2, 1-3 and 1-4 interactions
@@ -1900,7 +1966,8 @@ class LigandAtomMapping:
             id2 = a2.GetAtomicNum()
             bPolar1 = False
             bPolar2 = False
-            if( id1==1 and id2==1):
+
+            if( id1==1 and id2==1): # both hydrogens
                 bPolar1 = self._isPolarH( a1 )
                 bPolar2 = self._isPolarH( a2 )
                 if(bPolar1==True and bPolar2==True):
@@ -1908,8 +1975,19 @@ class LigandAtomMapping:
                         continue
                 elif( self.bH2H==False ):
                     continue
+                # only allow mapping hydrogens in those cases,
+                # when heavyAtom1 and heavyAtom2 have an equal number of them bound
+                heavyAtom1 = a1.GetNeighbors()[0]
+                heavyAtom2 = a2.GetNeighbors()[0]
+                nb1 = heavyAtom1.GetNeighbors() 
+                nb2 = heavyAtom2.GetNeighbors() 
+                nH1 = self._countHydrogens(nb1)
+                nH2 = self._countHydrogens(nb2)
+                if nH1!=nH2:
+                    continue
             elif(self.bH2Heavy==False and ( (id1==1) ^ (id2==1) ) ): # ^ := xor
                 continue
+
             newn1.append(n1)
             newn2.append(n2)
         return(newn1,newn2)

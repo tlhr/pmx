@@ -139,7 +139,10 @@ def integrate_dgdl(fn, ndata=-1, lambda0=0, invert_values=False, sigmoid=0.0):
     # check lambda0 is either 0 or 1
     assert lambda0 in [0, 1]
 
-    lines = open(fn, encoding="ISO-8859-1").readlines()
+    try:
+        lines = open(fn, encoding="ISO-8859-1").readlines()
+    except:
+        return None, None
     if not lines:
         return None, None
 
