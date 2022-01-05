@@ -120,6 +120,8 @@ class TopolBase:
         self.has_vsites3 = False
         self.has_vsites4 = False
         self.has_posre = False
+        self.has_exclusions = False
+        self.exclusions = []
         self.posre = []
         self.molecules = []
         self.footer = []
@@ -163,6 +165,7 @@ class TopolBase:
             self.read_vsites2(lines)
             self.read_vsites3(lines)
             self.read_vsites4(lines)
+            self.read_exclusions(lines)
             self.read_intermolecular_interactions(lines)
             if self.has_posre:
                 self.read_posre(posre_sections)
@@ -395,17 +398,17 @@ class TopolBase:
         lst = readSection(lines, '[ angles ]', '[')
         for line in lst:
             entries = line.split()
-            if len(entries) == 4:
+            if len(entries) == 4: # only atoms and angle type
                 idx = [int(x) for x in line.split()]
                 self.angles.append([self.atoms[idx[0]-1], self.atoms[idx[1]-1],
                                     self.atoms[idx[2]-1], idx[3]])
-            elif len(entries) == 6:
+            elif len(entries) == 6: # angle with parameters for type 1, stateA only
                 idx = [int(x) for x in entries[:4]]
                 l = float(entries[4])
                 k = float(entries[5])
                 self.angles.append([self.atoms[idx[0]-1], self.atoms[idx[1]-1],
                                     self.atoms[idx[2]-1], idx[3], [l, k]])
-            elif len(entries) == 8 and entries[3] == '1':
+            elif len(entries) == 8 and entries[3] == '1': # type 1 for states A and B
                 idx = [int(x) for x in entries[:4]]
                 lA = float(entries[4])
                 kA = float(entries[5])
@@ -414,7 +417,7 @@ class TopolBase:
                 self.angles.append([self.atoms[idx[0]-1], self.atoms[idx[1]-1],
                                     self.atoms[idx[2]-1], idx[3],
                                     [idx[3], lA, kA], [idx[3], lB, kB]])
-            elif len(entries) == 8 and entries[3] == '5':
+            elif len(entries) == 8 and entries[3] == '5': # type 5 with parameters, stateA only
                 idx = [int(x) for x in entries[:4]]
                 lA1 = float(entries[4])
                 kA1 = float(entries[5])
@@ -425,7 +428,7 @@ class TopolBase:
                                     self.atoms[idx[2]-1],
                                     idx[3],
                                     [idx[3], lA1, kA1, lA2, kA2]])
-            elif len(entries) == 12:
+            elif len(entries) == 12: # type 5 with parameters, states A and B
                 idx = [int(x) for x in entries[:4]]
                 lA1 = float(entries[4])
                 kA1 = float(entries[5])
@@ -491,6 +494,21 @@ class TopolBase:
                                   self.atoms[idx[3]-1],
                                   self.atoms[idx[4]-1],
                                   func, rest])
+
+    def read_exclusions(self, lines):
+        starts = []
+        for i, line in enumerate(lines):
+            if line.strip().startswith('[ exclusions ]'):
+                starts.append(i)
+        if starts:
+            self.has_exclusions = True
+        for s in starts:
+            lst = readSection(lines[s:], '[ exclusions ]', '[')
+            for line in lst:
+                entr = line.split()
+                idx = [int(x) for x in entr[:]]
+                toappend = [self.atoms[x-1] for x in idx] 
+                self.exclusions.append( toappend )
 
     def read_vsites2(self, lines):
         starts = []
@@ -851,6 +869,8 @@ class TopolBase:
                 self.write_vsites3(fp)
             if self.has_vsites4:
                 self.write_vsites4(fp)
+            if self.has_exclusions:
+                self.write_exclusions(fp)
             if self.has_posre:
                 # NOTE: posre are dealt with in 2 ways: via specific posre
                 # readers/writers and via the footer. This may cause issues
@@ -1386,6 +1406,13 @@ class TopolBase:
                            d[0].name, d[1].name, d[2].name, d[3].name,
                            d[0].type, d[1].type, d[2].type, d[3].type,
                            A, B), file=fp)
+
+    def write_exclusions(self, fp):
+        print('\n[ exclusions ]', file=fp)
+        for excl in self.exclusions:
+            for ex in excl:
+                print("%6d " % (ex.id), end='', file=fp )
+            print("\n", file=fp )
 
     def write_vsites2(self, fp):
         print('\n[ virtual_sites2 ]', file=fp)
