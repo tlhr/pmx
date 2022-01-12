@@ -5,7 +5,7 @@ from pmx.forcefield2 import *
 from pmx.ndx import *
 import copy as xcopy
 
-def check_if_vsite_exists( vsites, xs):
+def check_if_vsite2_exists( vsites, xs):
     for v in vsites:
         if v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3]==xs[3] and v[4]==xs[4]:
             return(True)
@@ -13,6 +13,37 @@ def check_if_vsite_exists( vsites, xs):
             print("ERROR: it seems that vsites are to be morphed. Gromacs does not support that")
             sys.exit(0)
     return(False)
+
+def check_if_vsite3_exists( vsites, xs):
+    for v in vsites:
+        if v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3] and v[4]==xs[4] and v[5]==xs[5]:
+            return(True)
+        elif v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3]:
+            print("ERROR: it seems that vsites are to be morphed. Gromacs does not support that")
+            sys.exit(0)
+    return(False)
+
+def check_if_exclusion_valid( exclusions, ex ):
+    # return True, if all fine and ex can be added
+
+    # check if the first atom is dummy. If so, all fine
+    a0 = ex[0]
+    if ('DUM' in a0.atomtype) or ('DUM' in a0.atomtypeB):
+        return(True)
+
+    # check if an exclusion already exists
+    for excl in exclusions:
+        if excl[0]==ex[0]: # some interactions for this atom are already excluded
+            if len(excl)!=len(ex): # the exclusion lists are of different length
+                print('ERROR: Something wrong with exclusions: ',excl,ex)
+                sys.exit(1)
+            else:
+                for e in excl[1:]:
+                    if e not in ex:
+                        print('ERROR: Something wrong with exclusions: ',excl,ex)
+                        sys.exit(1)
+    return(True)
+
 
 def identify_ring_atoms( fname, num ):
     import rdkit
@@ -1017,6 +1048,35 @@ def main(argv):
                 a3 = m1.atoms[id3-1]
                 newvsites2.append(b)
 
+        # vsites3: stateA
+        newvsites3 = []
+        has_vsites3 = False
+        if(itp1.virtual_sites3):
+            has_vsites3 = True
+            for b in itp1.virtual_sites3:
+                id1 = b[0].id
+                id2 = b[1].id
+                id3 = b[2].id
+                id4 = b[3].id
+                a1 = m1.atoms[id1-1]
+                a2 = m1.atoms[id2-1]
+                a3 = m1.atoms[id3-1]
+                a4 = m1.atoms[id4-1]
+                newvsites3.append(b)
+
+        # exclusions: stateA
+        newexclusions = []
+        has_exclusions = False
+        if(itp1.exclusions):
+            has_exclusions = True
+            for excl in itp1.exclusions:
+                exclToAdd = []
+                for ex in excl:
+                    newid = ex.id
+                    newa = m1.atoms[newid-1]
+                    exclToAdd.append(newa)
+                newexclusions.append( exclToAdd )  
+
 	# now we have all parameter for pairs
 	# let's go for the dummies
 	for b in itp2.bonds:
@@ -1117,9 +1177,37 @@ def main(argv):
                 a2 = m1.atoms[newid2-1]
                 a3 = m1.atoms[newid3-1]
                 vsiteToAdd = [a1,a2,a3,b[3],b[4]]
-                if( check_if_vsite_exists( newvsites2, vsiteToAdd )==False ):
+                if( check_if_vsite2_exists( newvsites2, vsiteToAdd )==False ):
                     newvsites2.append( [a1, a2, a3, b[3], b[4]] )
 #                newvsites2.append( [newid1, newid2, newid3, b[3], b[4]] )
+
+        # vsites3: stateB
+        if(itp2.virtual_sites3):
+            has_vsites3 = True
+            for b in itp2.virtual_sites3:
+                newid1 = id_dicBA[b[0].id]
+                newid2 = id_dicBA[b[1].id]
+                newid3 = id_dicBA[b[2].id]
+                newid4 = id_dicBA[b[3].id]
+                a1 = m1.atoms[newid1-1]
+                a2 = m1.atoms[newid2-1]
+                a3 = m1.atoms[newid3-1]
+                a4 = m1.atoms[newid4-1]
+                vsiteToAdd = [a1,a2,a3,a4,b[4],b[5]]
+                if( check_if_vsite3_exists( newvsites3, vsiteToAdd )==False ):
+                    newvsites3.append( [a1, a2, a3, a4, b[4], b[5]] )
+
+        # exclusions: stateB
+        if(itp2.exclusions):
+            has_exclusions = True
+            for excl in itp2.exclusions:
+                exclToAdd = []
+                for ex in excl:
+                    newid = id_dicBA[ex.id]
+                    newa = m1.atoms[newid-1]
+                    exclToAdd.append(newa)
+                if( check_if_exclusion_valid( newexclusions, exclToAdd )==True ):
+                    newexclusions.append( exclToAdd )  
 
 	# make pairs
 	newpairs = []
@@ -1151,6 +1239,10 @@ def main(argv):
 	newitp.dihedrals = newdihedrals
         newitp.virtual_sites2 = newvsites2
         newitp.has_vsites2 = has_vsites2
+        newitp.virtual_sites3 = newvsites3
+        newitp.has_vsites3 = has_vsites3
+        newitp.exclusions = newexclusions
+        newitp.has_exclusions = has_exclusions
         # get charges
         qA, qB = sum_charge_of_states( newitp )
         qA_mem = xcopy.deepcopy( qA )
