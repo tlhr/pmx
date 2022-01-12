@@ -103,6 +103,8 @@ class TopolBase:
         self.has_vsites3 = False
         self.has_vsites4 = False
 	self.has_posre = False
+        self.has_exclusions = False
+        self.exclusions = []
         self.has_ii = False # intermolecular_interactions
         self.ii = {} # ii is a dictionary, which containts bonds, angles, dihedrals
 	self.posre = []
@@ -136,6 +138,7 @@ class TopolBase:
             self.read_vsites2(lines)
             self.read_vsites3(lines)
             self.read_vsites4(lines)
+            self.read_exclusions(lines)
             if self.has_posre:
 	        self.read_posre(posre_sections)
             self.__make_residues()
@@ -152,7 +155,10 @@ class TopolBase:
         name = entr[4]
         cgnr = int(entr[5])
         q = float(entr[6])
-        m = float(entr[7])
+        try:
+            m = float(entr[7])
+        except: # martini
+            m = ""
         try:
             atomtypeB = entr[8]
             qB = float(entr[9])
@@ -396,6 +402,21 @@ class TopolBase:
 #		foo = (self.atoms[idx[0]-1],self.atoms[idx[1]-1],self.atoms[idx[2]-1],self.atoms[idx[3]-1],func,rest)
 #		print 'length %d' % len(foo)
 
+    def read_exclusions(self, lines):
+        starts = []
+        for i, line in enumerate(lines):
+            if line.strip().startswith('[ exclusions ]'):
+                starts.append(i)
+        if starts:
+            self.has_exclusions = True
+        for s in starts:
+            lst = readSection(lines[s:], '[ exclusions ]', '[')
+            for line in lst:
+                entr = line.split()
+                idx = [int(x) for x in entr[:]]
+                toappend = [self.atoms[x-1] for x in idx]
+                self.exclusions.append( toappend )
+
     def read_vsites2(self, lines):
         starts = []
         dih = []
@@ -548,6 +569,8 @@ class TopolBase:
                 self.write_vsites3(fp)
             if self.has_vsites4:
                 self.write_vsites4(fp)
+            if self.has_exclusions:
+                self.write_exclusions(fp)
 	    if self.has_posre:
 		self.write_posre(fp)
         if not is_out_itp:
@@ -880,6 +903,14 @@ class TopolBase:
                     print >>fp, "%6d %6d %6d %6d %4d %s %s ; %s %s %s %s %s %s %s %s (%s->%s)" % \
                           ( d[0].id, d[1].id, d[2].id, d[3].id, d[4], bs, bs, d[0].name,d[1].name,d[2].name,d[3].name, \
                             d[0].type,d[1].type,d[2].type,d[3].type, A,B)
+
+    def write_exclusions(self, fp):
+        print >>fp,'\n [ exclusions ]'
+        for excl in self.exclusions:
+            towrite = ''
+            for ex in excl:
+                towrite += ' '+str(ex.id)
+            print >>fp, "%s" % towrite
 
     def write_vsites2(self, fp):
         print >>fp,'\n [ virtual_sites2 ]'    
