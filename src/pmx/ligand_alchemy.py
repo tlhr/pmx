@@ -2123,11 +2123,25 @@ class LigandHybridTopology:
         self._make_dihedrals()
 
 #####################################
-        # make vsites
-        doLog(self.logfile,"Construct vsites....")
+        # make vsites2
+        doLog(self.logfile,"Construct vsites2....")
         self.newvsites2 = [] # vsites of type 2
         self.bHasVsites2 = False
-        self._make_vsites()
+        self._make_vsites2()
+
+#####################################
+        # make vsites3
+        doLog(self.logfile,"Construct vsites3....")
+        self.newvsites3 = [] # vsites of type 3
+        self.bHasVsites3 = False
+        self._make_vsites3()
+
+#####################################
+        # make exclusions
+        doLog(self.logfile,"Construct exclusions....")
+        self.newexclusions = [] 
+        self.bHasExclusions = False
+        self._make_exclusions()
 
 #####################################
         # make pairs (1-4)
@@ -2663,18 +2677,18 @@ class LigandHybridTopology:
 #           dihList.append(dih)
         return dihList
 
-    def _make_vsites( self ):
+    def _make_vsites2( self ):
 #####################################
         # first molecule vsites
         if(self.itp1.virtual_sites2):
             self.bHasVsites2 = True
             for b in self.itp1.virtual_sites2:
-                id1 = b[0].id
-                id2 = b[1].id
-                id3 = b[2].id
-                a1 = self.m1.atoms[id1-1]
-                a2 = self.m1.atoms[id2-1]
-                a3 = self.m1.atoms[id3-1]
+#                id1 = b[0].id
+#                id2 = b[1].id
+#                id3 = b[2].id
+#                a1 = self.m1.atoms[id1-1]
+#                a2 = self.m1.atoms[id2-1]
+#                a3 = self.m1.atoms[id3-1]
                 self.newvsites2.append(b)
 
 #####################################
@@ -2689,8 +2703,59 @@ class LigandHybridTopology:
                 a2 = self.m1.atoms[newid2-1]
                 a3 = self.m1.atoms[newid3-1]
                 vsiteToAdd = [a1,a2,a3,b[3],b[4]]
-                if( self._check_if_vsite_exists( self.newvsites2, vsiteToAdd )==False ):
+                if( self._check_if_vsite2_exists( self.newvsites2, vsiteToAdd )==False ):
                     self.newvsites2.append( [a1, a2, a3, b[3], b[4]] )
+
+    def _make_vsites3( self ):
+#####################################
+        # first molecule vsites
+        if(self.itp1.virtual_sites3):
+            self.bHasVsites3 = True
+            for b in self.itp1.virtual_sites3:
+                self.newvsites3.append(b)
+
+#####################################
+        # second molecule vsites
+        if(self.itp2.virtual_sites3):
+            self.bHasVsites3 = True
+            for b in self.itp2.virtual_sites3:
+                newid1 = self.id_dicBA[b[0].id]
+                newid2 = self.id_dicBA[b[1].id]
+                newid3 = self.id_dicBA[b[2].id]
+                newid4 = self.id_dicBA[b[3].id]
+                a1 = self.m1.atoms[newid1-1]
+                a2 = self.m1.atoms[newid2-1]
+                a3 = self.m1.atoms[newid3-1]
+                a4 = self.m1.atoms[newid4-1]
+                vsiteToAdd = [a1,a2,a3,a4,b[4],b[5]]
+                if( self._check_if_vsite3_exists( self.newvsites3, vsiteToAdd )==False ):
+                    self.newvsites3.append( [a1, a2, a3, a4, b[4], b[5]] )
+
+    def _make_exclusions( self ):
+#####################################
+        # first molecule exclusions
+        if(self.itp1.exclusions):
+            self.bHasExclusions = True
+            for excl in self.itp1.exclusions:
+                exclToAdd = []
+                for ex in excl:
+                    newid = ex.id
+                    newa = self.m1.atoms[newid-1]
+                    exclToAdd.append(newa)
+                self.newexclusions.append( exclToAdd )
+
+#####################################
+        # second molecule exclusions
+        if(self.itp2.exclusions):
+            self.bHasExclusions = True
+            for excl in self.itp2.exclusions:
+                exclToAdd = []
+                for ex in excl:
+                    newid = self.id_dicBA[ex.id]
+                    newa = self.m1.atoms[newid-1]
+                    exclToAdd.append(newa)
+                if( self._check_if_exclusion_valid( self.newexclusions, exclToAdd )==True ):
+                    self.newexclusions.append( exclToAdd )
 
     def _make_pairs14( self ):
         pp = []
@@ -2725,6 +2790,10 @@ class LigandHybridTopology:
         self.newitp.dihedrals = self.newdihedrals
         self.newitp.virtual_sites2 = self.newvsites2
         self.newitp.has_vsites2 = self.bHasVsites2
+        self.newitp.virtual_sites3 = self.newvsites3
+        self.newitp.has_vsites3 = self.bHasVsites3
+        self.newitp.exclusions = self.newexclusions
+        self.newitp.has_exclusions = self.bHasExclusions
         # get charges
         self.qA, self.qB = self._sum_charge_of_states( self.newitp )
         self.qA_mem = cp.deepcopy( self.qA )
@@ -2748,14 +2817,45 @@ class LigandHybridTopology:
                 return(True)
         return(False)
 
-    def _check_if_vsite_exists( self, vsites, xs):
+    def _check_if_vsite2_exists( self, vsites, xs):
         for v in vsites:
             if v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3]==xs[3] and v[4]==xs[4]:
                 return(True)
             elif v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id:
-                print("ERROR: it seems that vsites are to be morphed. Gromacs does not support that")
+                print("ERROR: it seems that vsites2 are to be morphed. Gromacs does not support that")
                 sys.exit(0)
         return(False)
+
+    def _check_if_vsite3_exists( self, vsites, xs):
+        for v in vsites:
+            if v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3].id and v[4]==xs[4] and v[5]==xs[5]:
+                return(True)
+            elif v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3].id:
+                print("ERROR: it seems that vsites3 are to be morphed. Gromacs does not support that")
+                sys.exit(0)
+        return(False)
+
+    def _check_if_exclusion_valid( self, exclusions, ex ):
+        # return True, if all fine and ex can be added
+
+        # check if the first atom is dummy. If so, all fine
+        a0 = ex[0]
+        if ('DUM' in a0.atomtype) or ('DUM' in a0.atomtypeB):
+            return(True)
+
+        # check if an exclusion already exists
+        for excl in exclusions:
+            if excl[0]==ex[0]: # some interactions for this atom are already excluded
+                if len(excl)!=len(ex): # the exclusion lists are of different length
+                    print('ERROR: Something wrong with exclusions: ',excl,ex)
+                    sys.exit(0)
+                else:
+                    for e in excl[1:]:
+                        if e not in ex:
+                            print('ERROR: Something wrong with exclusions: ',excl,ex)
+                            sys.exit(0)
+        return(True)
+
 
     def _get_ff_entry(self, ids, itp, gmx45=True, what = 'bond'):
         if what == 'bond':
