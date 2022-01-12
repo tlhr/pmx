@@ -16,9 +16,9 @@ def check_if_vsite2_exists( vsites, xs):
 
 def check_if_vsite3_exists( vsites, xs):
     for v in vsites:
-        if v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3] and v[4]==xs[4] and v[5]==xs[5]:
+        if v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3].id and v[4]==xs[4] and v[5]==xs[5]:
             return(True)
-        elif v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3]:
+        elif v[0].id==xs[0].id and v[1].id==xs[1].id and v[2].id==xs[2].id and v[3].id==xs[3].id:
             print("ERROR: it seems that vsites are to be morphed. Gromacs does not support that")
             sys.exit(0)
     return(False)
