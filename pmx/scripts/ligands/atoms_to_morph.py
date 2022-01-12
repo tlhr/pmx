@@ -594,7 +594,7 @@ def reformatPDB(filename,num,randint=42):
     sigmaHoleID = []
     for a in m.atoms:
         newAtomName = a.name
-        if 'EP' in a.name:
+        if ('EP' in a.name) or ('LPH' in a.name):
             newAtomName = 'HSH'+str(sigmaHoleCounter)
             sigmaHoleCounter+=1
             sigmaHoleID.append(a.id)
