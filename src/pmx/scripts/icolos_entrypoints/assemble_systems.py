@@ -13,13 +13,22 @@ class PMXAssembleSystem:
     Entrypoint for Icolos workflow manager, builds the system and merges topologies
     """
 
-    def __init__(self, ligandPath: str, edges: str, workPath: str) -> None:
+    def __init__(
+        self,
+        ligandPath: str,
+        edges: str,
+        workPath: str,
+        ff: str = "amber99sb-star-ildn-mut.ff",
+        water: str = "tip3p",
+    ) -> None:
         super().__init__()
         self.ligandPath = ligandPath
         self.edges: list = edges.split(" ")
         self.workPath = workPath
         self.proteinPath = os.path.join(workPath, "input/protein/")
         self.protein = self._read_protein()
+        self.ff = ff
+        self.water = water
 
     def _read_protein(self):
         protein = {}
