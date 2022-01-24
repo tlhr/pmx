@@ -10,3 +10,8 @@ tests/__pycache__/
 
 # docs 
 docs/build
+.vscode
+build
+dist
+*.egg-info
+*.ipynb_checkpoints
