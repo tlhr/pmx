@@ -68,10 +68,10 @@ class PMXAssembleSystem:
                 workPath=self.workPath, edge=edge, bHybridStrTop=True
             )
             outLigPath = self._get_specific_path(
-                workPath=self.workPath, edge=edge, wp="water"
+                workPath=self.workPath, edge=edge, wp="ligand"
             )
             outProtPath = self._get_specific_path(
-                workPath=self.workPath, edge=edge, wp="protein"
+                workPath=self.workPath, edge=edge, wp="complex"
             )
 
             # Ligand structure
