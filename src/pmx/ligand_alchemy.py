@@ -1967,7 +1967,10 @@ class LigandAtomMapping:
             bPolar1 = False
             bPolar2 = False
 
-            if( id1==1 and id2==1): # both hydrogens
+            # if both hydrogens and both not sigma hole
+            if (id1==1) and (id2==1) and \
+                 ('HSH' not in a1.GetMonomerInfo().GetName() ) and \
+                 ('HSH' not in a2.GetMonomerInfo().GetName() ) :
                 bPolar1 = self._isPolarH( a1 )
                 bPolar2 = self._isPolarH( a2 )
                 if(bPolar1==True and bPolar2==True):
