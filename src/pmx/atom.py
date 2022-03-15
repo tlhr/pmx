@@ -201,7 +201,7 @@ class Atom:
         try:
             self.resnr = int(line[22:27])
         except:
-            self.resnr = line[22:27]  # contains insertion code
+            self.resnr = line[22:27].lstrip().rstrip()  # contains insertion code
 
         self.x = [float(line[30:38]),
                   float(line[39:46]),

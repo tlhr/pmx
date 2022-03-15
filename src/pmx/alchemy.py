@@ -234,6 +234,12 @@ def gen_hybrid_top(topol, recursive=True, verbose=False, scaleDih=1.0):
         pmxtop = deepcopy(topol)
         # create model with residue list
         m = Model(atoms=pmxtop.atoms, renumber_residues=False)
+        # need to sequentially renumber residues, 
+        # because --keep_resid flag may leave residues numbered non-sequentially
+        counter = 0
+        for r in m.residues:
+            counter += 1 
+            r.id = counter
         # use model residue list
         pmxtop.residues = m.residues
         # get list of hybrid residues and their params
@@ -1208,7 +1214,6 @@ def _find_predefined_dihedrals(topol, rlist, rdic, ffbonded,
 #    scaleDih = 0.0  # scale dihedrals with dummies
 
     for r in rlist:
-        idx = r.id - 1
         dih = rdic[r.resname][3]
         imp = rdic[r.resname][2]
         for d in imp+dih:
