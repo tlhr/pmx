@@ -514,6 +514,8 @@ class LigandAtomMapping:
 
 
         mols = [foo,bar]
+        Chem.GetSymmSSSR(foo)
+        Chem.GetSymmSSSR(bar)
         doLog(self.logfile,"MCS searching...",commandName=self.commandName)
 #    res = MCS.FindMCS(mols,ringMatchesRingOnly=True, completeRingsOnly=True, atomCompare='elements', bondCompare='any', timeout=int(t), maximize='bonds')
     # for new RDKit-2018 use below
