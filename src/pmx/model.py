@@ -1030,6 +1030,10 @@ def double_box(m1, m2, r=2.5, d=1.5, bLongestAxis=False, verbose=False):
             return(library._atommass['BR'])
         elif aname.startswith('Cl') or aname.startswith('CL'):
             return(library._atommass['CL'])
+        elif aname.startswith('Zn') or aname.startswith('ZN') or aname.startswith('Z'):
+            return(library._atommass['ZN'])
+        elif aname.startswith('Mg') or aname.startswith('MG'):
+            return(library._atommass['MG'])
         elif aname.startswith('D'):
             return(library._atommass[aname[1]])
         else:
