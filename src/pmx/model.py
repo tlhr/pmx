@@ -409,6 +409,16 @@ class Model(Atomselection):
             if int(str1[0:-1])==int(str2[0:-1])-1: # 52A, 53B
                 return(True)
         return(False)
+
+    def _getChainIDs( self, lines ):
+        """from the pdb lines extract chain IDs """
+        usedChainIDs = []
+        for line in lines:
+            if (line[:4] == 'ATOM') or (line[:6] == 'HETATM'):
+                a = Atom().readPDBString(line)
+                if( a.chain_id not in usedChainIDs ):
+                    usedChainIDs.append( a.chain_id )
+        return( usedChainIDs )
         
     # TODO: make readPDB and readPDBTER a single function. It seems like
     # readPDBTER is more general PDB reader?
@@ -430,6 +440,9 @@ class Model(Atomselection):
         usedChainIDs = []
         atomcount = 1
         prevCatom = None
+
+        # get already used chain IDs
+        usedChainIDs = self._getChainIDs( lines )
 
         for line in lines:
             if 'TER' in line:
@@ -465,6 +478,10 @@ class Model(Atomselection):
                     except TypeError:
                         bNewChain = False
                         chainID = ''
+                # the option below overwrites all the others:
+                # when a non-empty ID of the next chain is the same as the previous, then do no change
+                if (a.chain_id!='') and (a.chain_id==prevID):
+                    bNewChain = False
                 prevID = a.chain_id
                 prevResID = a.resnr
                 prevAtomName = a.name
@@ -1030,10 +1047,6 @@ def double_box(m1, m2, r=2.5, d=1.5, bLongestAxis=False, verbose=False):
             return(library._atommass['BR'])
         elif aname.startswith('Cl') or aname.startswith('CL'):
             return(library._atommass['CL'])
-        elif aname.startswith('Zn') or aname.startswith('ZN') or aname.startswith('Z'):
-            return(library._atommass['ZN'])
-        elif aname.startswith('Mg') or aname.startswith('MG'):
-            return(library._atommass['MG'])
         elif aname.startswith('D'):
             return(library._atommass[aname[1]])
         else:
