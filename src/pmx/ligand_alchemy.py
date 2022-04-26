@@ -771,7 +771,7 @@ class LigandAtomMapping:
                             bTriple=True
                     if( neighb.GetAtomicNum()==6 ):
                         if( len(neighb.GetNeighbors())==2 ):
-                            if( getBondLength(mol,a.GetIdx(),neighb.GetIdx())<1.25 ): # need to check bond length (in Angstroms)
+                            if( self._getBondLength(mol,a.GetIdx(),neighb.GetIdx())<1.25 ): # need to check bond length (in Angstroms)
                                 bTriple=True
         # N
         elif( a.GetAtomicNum()==7 ):
