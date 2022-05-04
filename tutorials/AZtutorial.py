@@ -926,9 +926,9 @@ class AZtutorial:
             rowNameProtein = '{0}_{1}'.format(edge,'protein')            
             dg = self.resultsAll.loc[rowNameProtein,'val'] - self.resultsAll.loc[rowNameWater,'val']
             erra = np.sqrt( np.power(self.resultsAll.loc[rowNameProtein,'err_analyt'],2.0) \
-                            - np.power(self.resultsAll.loc[rowNameWater,'err_analyt'],2.0) )
+                            + np.power(self.resultsAll.loc[rowNameWater,'err_analyt'],2.0) )
             errb = np.sqrt( np.power(self.resultsAll.loc[rowNameProtein,'err_boot'],2.0) \
-                            - np.power(self.resultsAll.loc[rowNameWater,'err_boot'],2.0) )
+                            + np.power(self.resultsAll.loc[rowNameWater,'err_boot'],2.0) )
             rowName = edge
             self.resultsSummary.loc[rowName,'val'] = dg
             self.resultsSummary.loc[rowName,'err_analyt'] = erra
