@@ -480,7 +480,7 @@ class Model(Atomselection):
                         chainID = ''
                 # the option below overwrites all the others:
                 # when a non-empty ID of the next chain is the same as the previous, then do no change
-                if (a.chain_id!='') and (a.chain_id==prevID):
+                if (a.chain_id!='') and (a.chain_id!=' ') and (a.chain_id==prevID):
                     bNewChain = False
                 prevID = a.chain_id
                 prevResID = a.resnr
