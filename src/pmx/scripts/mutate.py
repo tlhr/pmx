@@ -68,8 +68,9 @@ def _int_input():
         inp = int(inp)
         return inp
     except:
-        print('You entered "%s" -> Try again' % inp)
-        return None
+        return( inp )
+#        print('You entered "%s" -> Try again' % inp)
+#        return None
 
 
 def _check_residue_name(res):
@@ -229,7 +230,7 @@ class InteractiveSelection:
             print('\nSelect residue to mutate:')
             for i, r in enumerate(self.m.chdic[self.mut_chain].residues):
                 if r.moltype not in ['water', 'ion']:
-                    sys.stdout.write('%6d-%s-%s' % (r.id, r.resname, r.chain_id))
+                    sys.stdout.write('%6s-%s-%s' % (str(r.id), r.resname, r.chain_id))
                     if (i+1) % 6 == 0:
                         print("")
         print("")
@@ -239,8 +240,8 @@ class InteractiveSelection:
         while not selected_residue_id:
             sys.stdout.write('Enter residue number: ')
             selected_residue_id = _int_input()
-            if selected_residue_id is not None and selected_residue_id not in valid_ids:
-                print('Residue id %d not among valid IDs -> Try again' % selected_residue_id)
+            if (selected_residue_id is not None) and (selected_residue_id not in valid_ids):
+                print('Residue id %s not among valid IDs -> Try again' % str(selected_residue_id))
                 selected_residue_id = None
         return selected_residue_id
 
@@ -305,8 +306,8 @@ class InteractiveSelection:
                 aa = None
             if aa and (len(aa) == 3 or len(aa) == 4):
                 aa = library._ext_one_letter[aa]
-        print('Will apply mutation %s->%s on residue %s-%d'
-              % (rol, aa, residue.resname, residue.id))
+        print('Will apply mutation %s->%s on residue %s-%s'
+              % (rol, aa, residue.resname, str(residue.id)))
         return aa
 
     def select_nuc_mutation(self, residue):

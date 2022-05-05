@@ -106,7 +106,7 @@ def apply_aa_mutation(m, residue, new_aa_name, mtp_file, refB=None,
 
     hybrid_residue_name = olkey+'2'+new_aa_name
     if verbose is True:
-        print('log_> Residue to mutate: %d | %s | %s ' % (residue.id, residue.resname, residue.chain_id))
+        print('log_> Residue to mutate: %s | %s | %s ' % (str(residue.id), residue.resname, residue.chain_id))
         print('log_> Mutation to apply: %s->%s' % (olkey, new_aa_name))
         print('log_> Hybrid residue name: %s' % hybrid_residue_name)
     hybrid_res, bonds, imps, diheds, rotdic = _get_hybrid_residue(residue_name=hybrid_residue_name,
@@ -137,8 +137,8 @@ def apply_aa_mutation(m, residue, new_aa_name, mtp_file, refB=None,
     m.replace_residue(residue=residue, new=hybrid_res, bKeepResNum=True)
 
     if verbose is True:
-        print('log_> Inserted hybrid residue %s at position %d (chain %s)' %
-              (hybrid_res.resname, hybrid_res.id, hybrid_res.chain_id))
+        print('log_> Inserted hybrid residue %s at position %s (chain %s)' %
+              (hybrid_res.resname, str(hybrid_res.id), hybrid_res.chain_id))
 
 
 def apply_nuc_mutation(m, residue, new_nuc_name, mtp_file, verbose=False):
