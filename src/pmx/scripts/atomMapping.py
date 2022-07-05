@@ -260,8 +260,14 @@ def main(args):
     pdbName2,atomNameID2,sigmaHoleID2 = reformatPDB(args.i2,2,pid)
     mol1 = Chem.MolFromPDBFile(pdbName1,removeHs=False,sanitize=False)
     mol2 = Chem.MolFromPDBFile(pdbName2,removeHs=False,sanitize=False)
-#    Chem.SanitizeMol(mol1)
-#    Chem.SanitizeMol(mol2)
+    try:
+        Chem.SanitizeMol(mol1)
+    except:
+        pass
+    try:
+        Chem.SanitizeMol(mol2)
+    except:
+        pass
     os.remove(pdbName1)
     os.remove(pdbName2)
 
