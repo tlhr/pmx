@@ -748,7 +748,10 @@ def _proline_decouplings(topol, rlist, rdic):
 def _find_bonded_entries(topol, verbose=False):
     count = 0
     for b in topol.bonds:
-        a1, a2, func = b
+        try:
+            a1, a2, func = b
+        except: # for the cases where params explicitly listed
+            a1, a2, func, otherParam = b
         A, B = _check_case([a1, a2])
         if a1.atomtypeB is not None or a2.atomtypeB is not None:
             count += 1
@@ -798,7 +801,10 @@ def _find_bonded_entries(topol, verbose=False):
 def _find_angle_entries(topol, verbose=False):
     count = 0
     for a in topol.angles:
-        a1, a2, a3, func = a
+        try:
+            a1, a2, a3, func = a
+        except: # for the cases where params explicitly listed
+            a1, a2, a3, func, otherParam = a
         astate = None
         bstate = None
         if a1.atomtypeB is not None or \
