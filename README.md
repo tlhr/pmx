@@ -23,7 +23,7 @@ git clone https://github.com/deGrootLab/pmx pmx
 cd pmx
 ```
 The 'master' branch is written in Python 2.
-For Python 3 version use 'develop' branch; to switch to 'develop' branch type:
+For Python 3 version and Icolos support use 'develop' branch; to switch to 'develop' branch type:
 ```
 git checkout develop
 ```
