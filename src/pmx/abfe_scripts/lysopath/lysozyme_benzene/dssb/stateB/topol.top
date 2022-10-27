@@ -1,0 +1,18 @@
+#include "amber99sb-star-ildn-mut.ff/forcefield.itp"
+#include "../../strTopFolder_apo/ffMOL.itp"
+#include "../../strTopFolder_apo/ligand_MOLA.itp"
+#include "../../strTopFolder_apo/protein_protein.itp"
+#include "../../strTopFolder_apo/epe_MOL.itp"
+#include "../../strTopFolder_apo/ligand_MOLB.itp"
+#include "amber99sb-star-ildn-mut.ff/tip3p.itp"
+#include "amber99sb-star-ildn-mut.ff/ions.itp"
+
+[ system ]
+system apo
+
+[ molecules ]
+MOLA 1
+Protein_chain_A 1
+EPE 1
+MOLB 1
+SOL 158

@@ -1,0 +1,23 @@
+#include "amber99sb-star-ildn-mut.ff/forcefield.itp"
+#include "../../strTopFolder_holo/ffMOL.itp"
+#include "../../strTopFolder_holo/ligand_MOLA.itp"
+#include "../../strTopFolder_holo/protein_protein.itp"
+#include "../../strTopFolder_holo/epe_MOL.itp"
+#include "../../strTopFolder_holo/ligand_MOLB.itp"
+#include "amber99sb-star-ildn-mut.ff/tip3p.itp"
+#include "amber99sb-star-ildn-mut.ff/ions.itp"
+
+[ system ]
+system holo in water
+
+[ molecules ]
+MOLA 1
+Protein_chain_A 1
+EPE 1
+MOLB 1
+SOL 146
+SOL         22819
+NaJ              66
+ClJ              74
+
+#include "../../strTopFolder_holo/ii.itp"
