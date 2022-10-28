@@ -94,7 +94,9 @@ def read_dgdl_files(lst, lambda0=0, invert_values=False, verbose=True,\
             except:
                 print(' !! Error in checking %s' % (lst[idx]))
                 good=False
-        idx+=1
+                idx+=1
+        else:
+            idx+=1
     if(not good):
         raise RuntimeError("No good dgdl files provided.")
 
